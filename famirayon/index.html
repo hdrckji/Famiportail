@@ -2,301 +2,239 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>famiRayon — Agencez votre rayon pour vendre plus</title>
-<link rel="icon" href="../assets/img/logo.png">
-<link rel="stylesheet" href="../assets/css/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>famiRayon — Conseiller de mise en rayon</title>
 <style>
-  .intro {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 1.8rem;
+  :root {
+    --bg:#0e1712; --panel:#131e18; --panel-2:#18241d; --hover:#1e2c24;
+    --border:#243228; --ink:#e9f1eb; --soft:#94a89b; --faint:#66786d;
+    --brand:#37c07a; --brand-deep:#1c6b41; --or:#e0aa46; --danger:#d9584f;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
   }
-  .intro img { height: 95px; }
-  .intro h1 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    font-size: clamp(1.5rem, 3vw, 2.1rem);
-  }
-  .intro .sous-titre { color: var(--encre-douce); max-width: 60ch; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; }
+  body { margin:0; font-family:var(--font); background:
+      radial-gradient(900px 500px at 100% -5%, rgba(224,170,70,.10), transparent 60%),
+      var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+  button { font-family:inherit; }
 
-  /* ---- Formulaire ---- */
-  .carte-form {
-    background: var(--blanc);
-    border: 2px solid var(--vert-pale);
-    border-radius: var(--rayon);
-    padding: 1.6rem;
-    margin-bottom: 2rem;
-  }
-  .carte-form label {
-    display: block;
-    font-weight: 800;
-    font-size: 0.9rem;
-    margin: 0.9rem 0 0.3rem;
-  }
-  .carte-form label:first-of-type { margin-top: 0; }
-  .carte-form input {
-    width: 100%;
-    font-family: var(--font-body);
-    font-size: 1rem;
-    padding: 0.65rem 1rem;
-    border: 2px solid var(--vert-pale);
-    border-radius: 10px;
-    background: var(--fond);
-  }
-  .carte-form .aide { font-size: 0.82rem; color: var(--encre-douce); margin-top: 0.2rem; }
-  .carte-form .actions { margin-top: 1.3rem; }
+  .topbar { display:flex; align-items:center; gap:12px; padding:14px clamp(16px,4vw,32px); border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(14,23,18,.85); backdrop-filter:blur(10px); z-index:10; }
+  .topbar a.retour { width:40px; height:40px; display:grid; place-items:center; border-radius:11px; color:var(--soft); text-decoration:none; background:var(--panel-2); border:1px solid var(--border); }
+  .topbar a.retour:hover { color:var(--ink); }
+  .topbar .mark { width:36px; height:36px; border-radius:11px; background:linear-gradient(150deg,var(--or),#b67d24); display:grid; place-items:center; color:#3a2a08; }
+  .topbar .titre { font-size:16px; font-weight:700; } .topbar .titre span{ color:var(--or); }
+  .topbar .titre .sous { font-size:12px; font-weight:500; color:var(--faint); }
 
-  /* ---- Fée qui réfléchit ---- */
-  #enCours {
-    display: none;
-    text-align: center;
-    padding: 2rem 1rem;
-  }
-  #enCours img { height: 160px; }
-  #enCours p {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    margin-top: 0.7rem;
-  }
+  .wrap { max-width:820px; margin:0 auto; padding:26px clamp(16px,4vw,32px) 80px; }
 
-  /* ---- Résultats ---- */
-  #resultats { display: none; }
-  .analyse {
-    background: var(--vert-pale);
-    border-left: 5px solid var(--vert-feuille);
-    border-radius: 10px;
-    padding: 1rem 1.3rem;
-    margin-bottom: 1.4rem;
-    font-weight: 600;
-  }
-  .sugg {
-    background: var(--blanc);
-    border: 2px solid var(--vert-pale);
-    border-radius: var(--rayon);
-    padding: 1.2rem 1.4rem;
-    margin-bottom: 0.9rem;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.4rem 1rem;
-    animation: apparait 0.3s ease-out;
-  }
-  @keyframes apparait {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .sugg .num {
-    grid-row: span 3;
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: var(--vert-fonce);
-    color: var(--blanc);
-    display: grid; place-items: center;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 1.15rem;
-  }
-  .sugg h3 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    font-size: 1.1rem;
-  }
-  .sugg p { font-size: 0.93rem; }
-  .sugg .etiquette {
-    font-weight: 800;
-    color: var(--vert-feuille);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-right: 0.3rem;
-  }
-  .conseil {
-    background: var(--or-pale);
-    border-left: 5px solid var(--or-magique);
-    border-radius: 10px;
-    padding: 1rem 1.3rem;
-    margin-top: 1.4rem;
-  }
-  .conseil strong { color: #8A6200; }
-  #erreur {
-    display: none;
-    background: #FBE9E7;
-    border-left: 5px solid var(--rouge-doux);
-    border-radius: 10px;
-    padding: 1rem 1.3rem;
-    margin-bottom: 1.4rem;
-    color: #7d2d26;
-    font-weight: 600;
-  }
-  .refaire { margin-top: 1.5rem; }
+  .intro { display:flex; gap:16px; align-items:center; margin-bottom:22px; }
+  .intro .ic { width:56px; height:56px; border-radius:16px; background:linear-gradient(150deg,var(--or),#b67d24); display:grid; place-items:center; color:#3a2a08; flex:none; }
+  .intro h1 { margin:0; font-size:22px; font-weight:700; letter-spacing:-.01em; }
+  .intro p { margin:5px 0 0; color:var(--soft); font-size:14px; line-height:1.5; }
+
+  .carte { background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:20px; }
+  .carte label { display:block; font-size:11.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--soft); margin:14px 0 6px; }
+  .carte label:first-of-type { margin-top:0; }
+  .carte input { width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--ink); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit; }
+  .carte input::placeholder { color:var(--faint); }
+  .carte input:focus { outline:none; border-color:var(--or); }
+  .aide { font-size:12.5px; color:var(--faint); margin-top:6px; }
+  .btn { border:none; border-radius:12px; padding:13px 20px; font-weight:750; font-size:15px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:transform .12s,filter .12s; }
+  .btn:hover { transform:translateY(-1px); filter:brightness(1.05); }
+  .btn-or { background:linear-gradient(135deg,#f0bd55,#b67d24); color:#2a1e06; }
+  .btn-ghost { background:var(--panel-2); color:var(--ink); border:1px solid var(--border); }
+  .actions { margin-top:18px; }
+
+  .err { display:none; background:rgba(217,88,79,.14); border:1px solid rgba(217,88,79,.4); color:#ffcfca; border-radius:12px; padding:12px 14px; font-weight:600; font-size:14px; margin:18px 0; }
+
+  #resultats { display:none; margin-top:24px; }
+  .analyse { background:linear-gradient(135deg,rgba(55,192,122,.14),var(--panel)); border:1px solid var(--border); border-left:4px solid var(--brand); border-radius:14px; padding:14px 16px; font-size:14.5px; line-height:1.5; margin-bottom:18px; }
+  .analyse b { color:var(--brand); }
+  .sugg-titre { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin:0 0 12px; }
+  .suggs { display:flex; flex-direction:column; gap:12px; }
+  .sugg { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:16px; display:grid; grid-template-columns:auto 1fr; gap:4px 14px; }
+  .sugg .num { grid-row:span 3; width:40px; height:40px; border-radius:12px; background:linear-gradient(150deg,var(--brand),var(--brand-deep)); color:#06130c; display:grid; place-items:center; font-weight:800; font-size:16px; }
+  .sugg h3 { margin:2px 0 2px; font-size:16px; font-weight:650; }
+  .sugg .lg { font-size:13.5px; color:var(--soft); line-height:1.45; }
+  .sugg .lg b { color:var(--brand); font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.03em; margin-right:6px; }
+  .conseil { margin-top:16px; background:linear-gradient(135deg,rgba(224,170,70,.14),var(--panel)); border:1px solid var(--border); border-left:4px solid var(--or); border-radius:14px; padding:14px 16px; font-size:14px; line-height:1.5; }
+  .conseil b { color:var(--or); }
+  .refaire { margin-top:20px; }
+
+  /* Fée (chargement) */
+  .fee-back { position:fixed; inset:0; z-index:900; background:radial-gradient(circle at 50% 40%,#14261a,#070d09); display:none; align-items:center; justify-content:center; opacity:0; transition:opacity .25s; }
+  .fee-back.on { display:flex; opacity:1; }
+  .fee-scene { text-align:center; width:min(520px,92vw); }
+  .fee-duo { display:flex; align-items:flex-end; justify-content:center; gap:8px; position:relative; }
+  .fee-perso { width:min(200px,40vw); height:auto; display:block; animation:feeFlotte 3s ease-in-out infinite; transform-origin:50% 70%; }
+  @keyframes feeFlotte { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-9px) rotate(1deg)} }
+  .fee-ailes { animation:feeAiles 1.5s ease-in-out infinite; transform-origin:300px 300px; }
+  @keyframes feeAiles { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(.9)} }
+  .fee-bras { animation:feeCoup 2s cubic-bezier(.36,.07,.3,1) infinite; transform-origin:340px 342px; }
+  @keyframes feeCoup { 0%,40%{transform:rotate(0)} 52%{transform:rotate(-26deg)} 62%{transform:rotate(22deg)} 72%{transform:rotate(-6deg)} 82%,100%{transform:rotate(0)} }
+  .fee-halo { animation:feeHalo 2s ease-in-out infinite; transform-origin:405px 247px; }
+  @keyframes feeHalo { 0%,45%,100%{opacity:.5;transform:scale(.85)} 62%{opacity:1;transform:scale(1.35)} }
+  .fee-yeux { animation:feeCligne 4.5s infinite; transform-origin:300px 232px; }
+  @keyframes feeCligne { 0%,94%,100%{transform:scaleY(1)} 97%{transform:scaleY(.1)} }
+  .fee-plante { width:min(150px,30vw); height:auto; display:block; }
+  .fee-plant { display:none; }
+  .fee-plant.on { display:block; animation:feePousse .55s cubic-bezier(.2,1.6,.4,1), feeBalance 3.2s ease-in-out .55s infinite; transform-origin:110px 172px; }
+  @keyframes feePousse { from{transform:scale(.15) translateY(20px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+  @keyframes feeBalance { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg)} }
+  .fee-etincelles { position:absolute; left:52%; top:34%; width:1px; height:1px; }
+  .fee-et { position:absolute; width:9px; height:9px; background:#B5D95A; border-radius:2px; box-shadow:0 0 8px rgba(141,198,63,.9); animation:feeVole 1.4s ease-in forwards; }
+  @keyframes feeVole { 0%{transform:translate(0,0) scale(.4);opacity:0} 20%{opacity:1} 100%{transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(220deg);opacity:0} }
+  .fee-barre { width:min(300px,80%); height:8px; margin:22px auto 0; background:rgba(255,255,255,.14); border-radius:999px; overflow:hidden; }
+  .fee-barre span { display:block; height:100%; width:35%; border-radius:999px; background:linear-gradient(90deg,#8DC63F,#1E6B33); animation:feeIndef 1.15s ease-in-out infinite; }
+  @keyframes feeIndef { 0%{transform:translateX(-115%)} 100%{transform:translateX(320%)} }
+  .fee-txt { margin-top:14px; color:#DCEBD6; font-weight:700; font-size:.95rem; }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important} }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <img class="logo" src="../assets/img/logo.png" alt="Famiflora">
-  <div class="titre-app">fami<span>Rayon</span></div>
-  <nav aria-label="Navigation principale">
-    <a href="../index.php" target="_top">← famiPortail</a>
-    <a href="../famicom/index.html">famiCom</a>
-    <a href="index.html" class="actif">famiRayon</a>
-  </nav>
+  <a class="retour" href="../index.php" target="_top" title="Retour au portail"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+  <div class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l2-4h16l2 4"/><path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M9 12h6"/></svg></div>
+  <div class="titre">fami<span>Rayon</span><div class="sous">Conseiller de mise en rayon</div></div>
 </header>
 
-<main class="conteneur">
-
-  <section class="intro">
-    <img src="../assets/img/fee/05_reflechit.png" alt="La fée Famiflora réfléchit">
+<div class="wrap">
+  <div class="intro">
+    <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l2-4h16l2 4"/><path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M9 12h6"/></svg></div>
     <div>
-      <h1>Quels articles placer à côté ? 🛒</h1>
-      <p class="sous-titre">Indiquez le produit principal de votre rayon : la fée vous suggère les articles complémentaires à placer à côté pour encourager les achats groupés — avec le pourquoi et le comment.</p>
+      <h1>Quels articles placer côte à côte ?</h1>
+      <p>Indiquez le produit principal de votre rayon : la fée suggère les articles complémentaires à placer à proximité pour encourager les achats groupés — avec le pourquoi et le comment.</p>
     </div>
-  </section>
+  </div>
 
-  <section class="carte-form" id="zoneForm">
+  <div class="carte" id="zoneForm">
     <label for="champProduit">Produit ou rayon principal</label>
     <input id="champProduit" maxlength="200" placeholder="Ex. : piscines hors-sol, barbecues, plantes d'intérieur…">
     <label for="champContexte">Contexte (facultatif)</label>
     <input id="champContexte" maxlength="500" placeholder="Ex. : début d'été, tête de gondole disponible, petit magasin…">
-    <p class="aide">Plus vous donnez de contexte, plus les suggestions seront adaptées.</p>
-    <div class="actions">
-      <button class="btn btn-vert" id="btnAnalyser">✦ Demander conseil à la fée</button>
-    </div>
-  </section>
-
-  <div id="erreur" role="alert"></div>
-
-  <div id="enCours" aria-live="polite">
-    <img id="feeAnim" src="../assets/img/fee/frame_01_position_normale.png" alt="">
-    <p>La fée étudie votre rayon…</p>
+    <p class="aide">Plus vous donnez de contexte, plus les conseils seront adaptés.</p>
+    <div class="actions"><button class="btn btn-or" id="btnAnalyser">✨ Demander conseil</button></div>
   </div>
+
+  <div class="err" id="erreur" role="alert"></div>
 
   <section id="resultats" aria-live="polite">
     <div class="analyse" id="blocAnalyse"></div>
-    <div id="listeSugg"></div>
+    <p class="sugg-titre">Articles à placer à côté</p>
+    <div class="suggs" id="listeSugg"></div>
     <div class="conseil" id="blocConseil"></div>
-    <div class="refaire">
-      <button class="btn btn-clair" id="btnRefaire">↺ Analyser un autre rayon</button>
-    </div>
+    <div class="refaire"><button class="btn btn-ghost" id="btnRefaire">↺ Analyser un autre rayon</button></div>
   </section>
+</div>
 
-</main>
-
-<footer class="pied">
-  famiRayon · Suggestions générées par IA — à valider avec votre bon sens de terrain 🌱
-</footer>
+<!-- Fée (chargement) -->
+<div class="fee-back" id="feeBack" aria-hidden="true">
+  <div class="fee-scene">
+    <div class="fee-duo">
+      <svg class="fee-perso" viewBox="130 20 360 490" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="fS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE1C4"/><stop offset="1" stop-color="#F3CBA3"/></linearGradient>
+          <linearGradient id="fH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#94512F"/><stop offset="1" stop-color="#6E3A22"/></linearGradient>
+          <linearGradient id="fD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9D454"/><stop offset="1" stop-color="#84BD3C"/></linearGradient>
+          <radialGradient id="fG"><stop offset="0" stop-color="#EAF6CE" stop-opacity=".85"/><stop offset=".5" stop-color="#C9E58B" stop-opacity=".4"/><stop offset="1" stop-color="#8DC63F" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g class="fee-ailes">
+          <path d="M298 318 Q 156 330 140 160 Q 270 152 298 318 Z" fill="#1E6B33"/><path d="M280 296 Q 186 306 176 192 Q 256 186 280 296 Z" fill="#8DC63F"/>
+          <path d="M302 318 Q 444 330 460 160 Q 330 152 302 318 Z" fill="#1E6B33"/><path d="M320 296 Q 414 306 424 192 Q 344 186 320 296 Z" fill="#8DC63F"/>
+          <path d="M298 330 Q 178 322 170 456 Q 262 466 298 330 Z" fill="#1E6B33"/><path d="M290 340 Q 210 334 206 416 Q 258 424 290 340 Z" fill="#8DC63F"/>
+          <path d="M302 330 Q 422 322 430 456 Q 338 466 302 330 Z" fill="#1E6B33"/><path d="M310 340 Q 390 334 394 416 Q 342 424 310 340 Z" fill="#8DC63F"/>
+        </g>
+        <path d="M282 436 Q 279 462 277 484" stroke="url(#fS)" stroke-width="14" stroke-linecap="round" fill="none"/><path d="M318 436 Q 321 462 323 484" stroke="url(#fS)" stroke-width="14" stroke-linecap="round" fill="none"/>
+        <ellipse cx="274" cy="492" rx="16" ry="9" fill="#1E6B33"/><ellipse cx="326" cy="492" rx="16" ry="9" fill="#1E6B33"/>
+        <path d="M288 298 L 312 298 L 311 336 L 289 336 Z" fill="#F3CBA3"/>
+        <path d="M250 414 L 262 444 L 276 416 L 290 448 L 300 418 L 310 448 L 324 416 L 338 444 L 350 414 Z" fill="#1E6B33"/>
+        <path d="M258 330 Q 300 318 342 330 L 352 422 Q 300 438 248 422 Z" fill="url(#fD)"/>
+        <path d="M260 342 Q 240 360 246 384 Q 252 396 264 396" stroke="url(#fS)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="300" cy="220" r="92" fill="url(#fS)"/>
+        <circle cx="300" cy="72" r="37" fill="url(#fH)"/><path d="M326 52 Q 342 34 364 36 Q 356 58 334 64 Z" fill="#8DC63F"/>
+        <path d="M204 258 Q 184 112 300 88 Q 416 112 396 258 Q 386 262 380 252 Q 386 202 356 178 Q 336 158 300 152 Q 264 158 244 178 Q 214 202 220 252 Q 214 262 204 258 Z" fill="url(#fH)"/>
+        <path d="M222 236 Q 216 262 226 284 Q 236 274 234 248 Q 228 238 222 236 Z" fill="url(#fH)"/><path d="M378 236 Q 384 262 374 284 Q 364 274 366 248 Q 372 238 378 236 Z" fill="url(#fH)"/>
+        <path d="M241 214 Q 262 199 283 212" stroke="#8DC63F" stroke-width="7" stroke-linecap="round" fill="none" opacity=".8"/><path d="M317 212 Q 338 199 359 214" stroke="#8DC63F" stroke-width="7" stroke-linecap="round" fill="none" opacity=".8"/>
+        <g class="fee-yeux"><circle cx="262" cy="232" r="20" fill="#1E4020"/><circle cx="338" cy="232" r="20" fill="#1E4020"/><circle cx="269" cy="224" r="7" fill="#fff"/><circle cx="345" cy="224" r="7" fill="#fff"/></g>
+        <ellipse cx="230" cy="268" rx="17" ry="10.5" fill="#F0A96B" opacity=".6"/><ellipse cx="370" cy="268" rx="17" ry="10.5" fill="#F0A96B" opacity=".6"/>
+        <path d="M280 270 Q 300 292 320 270 Q 312 286 300 286 Q 288 286 280 270 Z" fill="#1A1A1A"/>
+        <g class="fee-bras">
+          <path d="M340 342 Q 366 330 380 306" stroke="url(#fS)" stroke-width="12" stroke-linecap="round" fill="none"/><circle cx="381" cy="303" r="9" fill="#F3CBA3"/>
+          <line x1="382" y1="300" x2="402" y2="254" stroke="#8A5B36" stroke-width="6" stroke-linecap="round"/>
+          <circle class="fee-halo" cx="405" cy="247" r="42" fill="url(#fG)"/>
+          <path d="M405 218 l8 21 21 8 -21 8 -8 21 -8 -21 -21 -8 21 -8 Z" fill="#8DC63F"/><circle cx="405" cy="247" r="6.5" fill="#1E6B33"/>
+        </g>
+      </svg>
+      <div class="fee-etincelles" id="feeEt"></div>
+      <svg class="fee-plante" viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="pP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C97B4A"/><stop offset="1" stop-color="#9C5730"/></linearGradient><linearGradient id="pT" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#2E7D3B"/><stop offset="1" stop-color="#8DC63F"/></linearGradient></defs>
+        <path d="M56 168 L164 168 L152 246 Q 110 254 68 246 Z" fill="url(#pP)"/><rect x="48" y="150" width="124" height="24" rx="7" fill="#D98A57"/><ellipse cx="110" cy="172" rx="52" ry="9" fill="#5C3A21"/>
+        <g class="fee-plant"><path d="M110 170 Q 106 118 111 74" stroke="url(#pT)" stroke-width="7.5" stroke-linecap="round" fill="none"/><path d="M110 96 Q 78 76 72 102 Q 92 120 110 96 Z" fill="#8DC63F"/><g transform="translate(111,62)"><ellipse cx="-17" cy="0" rx="13" ry="9" fill="#F2A9C4"/><ellipse cx="17" cy="0" rx="13" ry="9" fill="#F2A9C4"/><ellipse cx="0" cy="-16" rx="9" ry="13" fill="#F6BDD2"/><ellipse cx="0" cy="16" rx="9" ry="13" fill="#F6BDD2"/><circle r="9" fill="#E8C46B"/></g></g>
+        <g class="fee-plant"><rect x="97" y="90" width="26" height="82" rx="13" fill="#4E9E52"/><path d="M97 126 Q 80 126 80 110 Q 80 102 87 102" stroke="#4E9E52" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M123 138 Q 140 138 140 122 Q 140 114 133 114" stroke="#4E9E52" stroke-width="12" stroke-linecap="round" fill="none"/><ellipse cx="110" cy="84" rx="10" ry="7.5" fill="#F26E7E"/></g>
+        <g class="fee-plant"><rect x="102" y="96" width="16" height="74" rx="5" fill="#8A5B36"/><circle cx="110" cy="64" r="40" fill="#2E7D3B"/><circle cx="78" cy="84" r="28" fill="#3C9147"/><circle cx="142" cy="84" r="28" fill="#3C9147"/><circle cx="110" cy="82" r="32" fill="#5EA843"/></g>
+        <g class="fee-plant"><path d="M110 170 Q 108 122 111 76" stroke="url(#pT)" stroke-width="7" stroke-linecap="round" fill="none"/><g transform="translate(111,64)" fill="#F4B41A"><ellipse cx="0" cy="-18" rx="6" ry="12"/><ellipse cx="0" cy="18" rx="6" ry="12"/><ellipse cx="-18" cy="0" rx="12" ry="6"/><ellipse cx="18" cy="0" rx="12" ry="6"/><ellipse cx="-13" cy="-13" rx="9" ry="7"/><ellipse cx="13" cy="-13" rx="9" ry="7"/><ellipse cx="-13" cy="13" rx="9" ry="7"/><ellipse cx="13" cy="13" rx="9" ry="7"/></g><circle cx="111" cy="64" r="11" fill="#6E4523"/></g>
+      </svg>
+    </div>
+    <div class="fee-barre"><span></span></div>
+    <div class="fee-txt" id="feeTxt">La fée étudie votre rayon…</div>
+  </div>
+</div>
 
 <script>
-const API = 'api.php';
-const frames = [
-  '../assets/img/fee/frame_01_position_normale.png',
-  '../assets/img/fee/frame_02_baguette_levee.png',
-  '../assets/img/fee/frame_03_coup_vers_le_bas.png',
-  '../assets/img/fee/frame_04_coup_remonte.png',
-  '../assets/img/fee/frame_05_explosion_magique.png'
-];
-frames.forEach(src => { const i = new Image(); i.src = src; });
+const API='api.php';
+const feeBack=document.getElementById('feeBack'), feeTxt=document.getElementById('feeTxt'), feeEt=document.getElementById('feeEt');
+let plantes=null, etinc=null, pIdx=-1;
+function pousse(){ const all=document.querySelectorAll('.fee-plant'); all.forEach(g=>g.classList.remove('on')); pIdx=(pIdx+1)%all.length; all[pIdx].classList.add('on'); }
+function etincelle(){ if(!feeBack.classList.contains('on'))return; const s=document.createElement('span'); s.className='fee-et'; s.style.setProperty('--dx',(60+Math.random()*70)+'px'); s.style.setProperty('--dy',(40+Math.random()*60)+'px'); s.style.left=(Math.random()*14-7)+'px'; feeEt.appendChild(s); setTimeout(()=>s.remove(),1500); }
+function feeShow(txt){ feeTxt.textContent=txt||'Un instant…'; feeBack.classList.add('on'); pIdx=-1; pousse(); plantes=setInterval(pousse,2200); etinc=setInterval(etincelle,650); }
+function feeHide(){ feeBack.classList.remove('on'); clearInterval(plantes); clearInterval(etinc); }
 
-let animId = null;
-function demarrerAnim() {
-  let f = 0;
-  const img = document.getElementById('feeAnim');
-  animId = setInterval(() => { f = (f + 1) % frames.length; img.src = frames[f]; }, 220);
-}
-function arreterAnim() { clearInterval(animId); }
+function echapper(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
+function obtenirCode(force){ let code=localStorage.getItem('famirayon_code'); if(!code||force){ code=prompt("Code d'accès famiRayon (demandez-le à votre responsable) :")||''; localStorage.setItem('famirayon_code',code); } return code; }
 
-function echapper(s) {
-  const d = document.createElement('div');
-  d.textContent = s ?? '';
-  return d.innerHTML;
-}
-
-function obtenirCode(force = false) {
-  let code = localStorage.getItem('famirayon_code');
-  if (!code || force) {
-    code = prompt("Code d'accès famiRayon (demandez-le à votre responsable) :") || '';
-    localStorage.setItem('famirayon_code', code);
-  }
-  return code;
-}
-
-async function analyser() {
-  const produit = document.getElementById('champProduit').value.trim();
-  const contexte = document.getElementById('champContexte').value.trim();
-  const erreur = document.getElementById('erreur');
-  erreur.style.display = 'none';
-
-  if (!produit) {
-    erreur.textContent = 'Indiquez d\'abord le produit ou le rayon principal.';
-    erreur.style.display = 'block';
-    return;
-  }
-
-  document.getElementById('zoneForm').style.display = 'none';
-  document.getElementById('resultats').style.display = 'none';
-  document.getElementById('enCours').style.display = 'block';
-  demarrerAnim();
-
-  try {
-    let rep = await fetch(API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ produit, contexte, code: obtenirCode() })
-    });
-    let res = await rep.json();
-
-    // Code d'accès incorrect ? On redemande une fois.
-    if (rep.status === 403 && res.erreur === 'code_invalide') {
-      rep = await fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ produit, contexte, code: obtenirCode(true) })
-      });
-      res = await rep.json();
+async function analyser(){
+  const produit=document.getElementById('champProduit').value.trim();
+  const contexte=document.getElementById('champContexte').value.trim();
+  const erreur=document.getElementById('erreur'); erreur.style.display='none';
+  if(!produit){ erreur.textContent="Indiquez d'abord le produit ou le rayon principal."; erreur.style.display='block'; return; }
+  document.getElementById('zoneForm').style.display='none';
+  document.getElementById('resultats').style.display='none';
+  feeShow('La fée étudie votre rayon…');
+  try{
+    let rep=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({produit,contexte,code:obtenirCode()})});
+    let res=await rep.json();
+    if(rep.status===403 && res.erreur==='code_invalide'){
+      rep=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({produit,contexte,code:obtenirCode(true)})});
+      res=await rep.json();
     }
-
-    if (!rep.ok) throw new Error(res.erreur || 'Erreur inattendue.');
-
-    afficherResultats(res);
-  } catch (e) {
-    erreur.textContent = '😕 ' + (e.message || 'Le serveur ne répond pas.');
-    erreur.style.display = 'block';
-    document.getElementById('zoneForm').style.display = 'block';
-  } finally {
-    arreterAnim();
-    document.getElementById('enCours').style.display = 'none';
-  }
+    if(!rep.ok) throw new Error(res.erreur||'Erreur inattendue.');
+    afficher(res);
+  }catch(e){
+    erreur.textContent='😕 '+(e.message||'Le serveur ne répond pas.'); erreur.style.display='block';
+    document.getElementById('zoneForm').style.display='block';
+  }finally{ feeHide(); }
 }
-
-function afficherResultats(res) {
-  document.getElementById('blocAnalyse').innerHTML = '💡 ' + echapper(res.analyse);
-  document.getElementById('listeSugg').innerHTML = (res.suggestions || []).map((s, i) => `
+function afficher(res){
+  document.getElementById('blocAnalyse').innerHTML='<b>💡 Analyse.</b> '+echapper(res.analyse);
+  document.getElementById('listeSugg').innerHTML=(res.suggestions||[]).map((s,i)=>`
     <article class="sugg">
-      <div class="num">${i + 1}</div>
+      <div class="num">${i+1}</div>
       <h3>${echapper(s.produit)}</h3>
-      <p><span class="etiquette">Pourquoi</span>${echapper(s.pourquoi)}</p>
-      <p><span class="etiquette">Placement</span>${echapper(s.placement)}</p>
-    </article>
-  `).join('');
-  document.getElementById('blocConseil').innerHTML =
-    '<strong>✦ Astuce de la fée :</strong> ' + echapper(res.conseil_general);
-  document.getElementById('resultats').style.display = 'block';
+      <p class="lg"><b>Pourquoi</b>${echapper(s.pourquoi)}</p>
+      <p class="lg"><b>Placement</b>${echapper(s.placement)}</p>
+    </article>`).join('');
+  document.getElementById('blocConseil').innerHTML='<b>✦ Astuce de la fée.</b> '+echapper(res.conseil_general);
+  document.getElementById('resultats').style.display='block';
 }
 
-document.getElementById('btnAnalyser').addEventListener('click', analyser);
-document.getElementById('champProduit').addEventListener('keydown', e => {
-  if (e.key === 'Enter') analyser();
-});
-document.getElementById('btnRefaire').addEventListener('click', () => {
-  document.getElementById('resultats').style.display = 'none';
-  document.getElementById('zoneForm').style.display = 'block';
+document.getElementById('btnAnalyser').addEventListener('click',analyser);
+document.getElementById('champProduit').addEventListener('keydown',e=>{ if(e.key==='Enter') analyser(); });
+document.getElementById('btnRefaire').addEventListener('click',()=>{
+  document.getElementById('resultats').style.display='none';
+  document.getElementById('zoneForm').style.display='block';
   document.getElementById('champProduit').focus();
 });
 </script>
-
 </body>
 </html>

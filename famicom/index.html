@@ -2,459 +2,411 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>famiCom — Communications officielles Famiflora</title>
-<link rel="icon" href="../assets/img/logo.png">
-<link rel="stylesheet" href="../assets/css/style.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>famiCom — Communication interne Famiflora</title>
 <style>
-  /* ---- Écran de chargement : la fée lance sa magie ---- */
-  #chargement {
-    position: fixed; inset: 0;
-    background: var(--fond);
-    display: grid; place-items: center;
-    z-index: 100;
-    transition: opacity 0.4s;
+  :root {
+    --bg:#0e1712; --rail:#0c1410; --panel:#131e18; --panel-2:#18241d; --hover:#1e2c24;
+    --border:#243228; --ink:#e9f1eb; --soft:#94a89b; --faint:#66786d;
+    --brand:#37c07a; --brand-deep:#1c6b41; --me:#1f5a3a; --them:#1e2a22; --danger:#d9584f;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
   }
-  #chargement.fini { opacity: 0; pointer-events: none; }
-  #chargement img { height: 180px; }
-  #chargement p {
-    font-family: var(--font-display);
-    color: var(--vert-fonce);
-    font-weight: 600;
-    margin-top: 0.8rem;
-    text-align: center;
-  }
+  * { box-sizing:border-box; }
+  html,body { height:100%; }
+  body { margin:0; font-family:var(--font); background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; overflow:hidden; }
+  button { font-family:inherit; }
 
-  /* ---- Bandeau d'intro ---- */
-  .intro {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 1.8rem;
-  }
-  .intro img { height: 95px; }
-  .intro h1 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    font-size: clamp(1.5rem, 3vw, 2.1rem);
-  }
-  .intro .sous-titre { color: var(--encre-douce); }
+  .app { display:grid; grid-template-columns:74px 1fr; height:100vh; }
 
-  /* ---- Barre d'outils (filtres + recherche + publier) ---- */
-  .barre-outils {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    align-items: center;
-    margin-bottom: 1.6rem;
-  }
-  .filtre {
-    font-family: var(--font-body);
-    font-weight: 800;
-    font-size: 0.88rem;
-    background: var(--blanc);
-    border: 2px solid var(--vert-pale);
-    color: var(--encre-douce);
-    border-radius: 999px;
-    padding: 0.4rem 1rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .filtre:hover { border-color: var(--vert-feuille); }
-  .filtre.actif { background: var(--vert-fonce); border-color: var(--vert-fonce); color: var(--blanc); }
-  .barre-outils input[type=search] {
-    flex: 1;
-    min-width: 180px;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    padding: 0.5rem 1rem;
-    border: 2px solid var(--vert-pale);
-    border-radius: 999px;
-    background: var(--blanc);
-  }
+  /* ---------- Icône-rail ---------- */
+  .rail { background:var(--rail); border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:6px; }
+  .rail .mark { width:44px; height:44px; border-radius:13px; background:linear-gradient(150deg,var(--brand),var(--brand-deep)); display:grid; place-items:center; color:#fff; margin-bottom:8px; }
+  .rail .nav-btn { position:relative; width:48px; height:48px; border:none; background:transparent; color:var(--soft); border-radius:14px; display:grid; place-items:center; cursor:pointer; transition:background .14s,color .14s; }
+  .rail .nav-btn:hover { background:var(--hover); color:var(--ink); }
+  .rail .nav-btn.actif { background:var(--panel-2); color:var(--brand); }
+  .rail .nav-btn .pastille { position:absolute; top:6px; right:6px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--danger); color:#fff; font-size:10px; font-weight:800; display:grid; place-items:center; }
+  .rail .grow { flex:1; }
+  .rail .avatar { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:13px; font-weight:800; color:#fff; }
 
-  /* ---- Cartes annonces ---- */
-  .annonce {
-    background: var(--blanc);
-    border: 2px solid var(--vert-pale);
-    border-radius: var(--rayon);
-    padding: 1.3rem 1.5rem;
-    margin-bottom: 1rem;
-    animation: apparait 0.3s ease-out;
-  }
-  @keyframes apparait {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .annonce.epinglee { border-color: var(--or-magique); background: linear-gradient(160deg, var(--or-pale) 0%, var(--blanc) 40%); }
-  .annonce .entete {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-  .annonce h3 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    font-size: 1.2rem;
-    margin-bottom: 0.35rem;
-  }
-  .annonce .meta {
-    font-size: 0.83rem;
-    color: var(--encre-douce);
-    margin-top: 0.7rem;
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
+  /* ---------- Zone principale ---------- */
+  .main { overflow:hidden; }
+  .vue { height:100vh; display:none; }
+  .vue.actif { display:grid; }
 
-  /* ---- État vide ---- */
-  #etatVide {
-    text-align: center;
-    padding: 2.5rem 1rem;
-    display: none;
-  }
-  #etatVide img { height: 130px; margin-bottom: 0.8rem; }
-  #etatVide p { color: var(--encre-douce); font-weight: 700; }
+  /* ===== ACTUS (feed) ===== */
+  .vue-actus { grid-template-rows:auto 1fr; }
+  .entete { display:flex; align-items:center; gap:12px; padding:16px 22px; border-bottom:1px solid var(--border); }
+  .entete h1 { margin:0; font-size:19px; font-weight:700; letter-spacing:-.01em; flex:1; }
+  .entete .sous { color:var(--faint); font-size:12.5px; }
+  .btn { border:none; border-radius:11px; padding:9px 15px; font-weight:700; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:transform .12s,filter .12s; }
+  .btn:hover { transform:translateY(-1px); filter:brightness(1.05); }
+  .btn-brand { background:linear-gradient(135deg,#48d089,var(--brand-deep)); color:#06130c; }
+  .btn-ghost { background:var(--panel-2); color:var(--ink); }
 
-  /* ---- Formulaire de publication ---- */
-  dialog {
-    border: none;
-    border-radius: var(--rayon);
-    padding: 0;
-    max-width: 560px;
-    width: calc(100% - 2rem);
-    box-shadow: 0 20px 60px rgba(36,48,27,0.25);
+  .feed-scroll { overflow-y:auto; padding:22px 16px 60px; }
+  .feed { max-width:600px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+  .post { background:var(--panel); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+  .post-tete { display:flex; align-items:center; gap:11px; padding:14px 16px; }
+  .post-tete .av { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-size:14px; font-weight:800; color:#fff; flex:none; }
+  .post-tete .qui { flex:1; line-height:1.25; min-width:0; }
+  .post-tete .qui b { font-size:14.5px; font-weight:650; }
+  .post-tete .qui .meta { font-size:12px; color:var(--faint); }
+  .cat { font-size:10.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--brand); border:1px solid var(--border); }
+  .pin { color:var(--brand); }
+  .post-media { height:190px; display:grid; place-items:center; color:rgba(255,255,255,.85); font-size:34px; }
+  .post-corps { padding:6px 16px 4px; }
+  .post-corps h3 { margin:6px 0 4px; font-size:16px; font-weight:650; }
+  .post-corps p { margin:0; color:var(--soft); font-size:14px; line-height:1.5; }
+  .post-actions { display:flex; align-items:center; gap:4px; padding:8px 10px 12px; }
+  .act { display:inline-flex; align-items:center; gap:7px; background:transparent; border:none; color:var(--soft); font-size:13px; font-weight:600; padding:7px 11px; border-radius:10px; cursor:pointer; transition:background .12s,color .12s; }
+  .act:hover { background:var(--hover); color:var(--ink); }
+  .act.aime { color:var(--brand); }
+  .act svg { width:18px; height:18px; }
+
+  /* ===== MESSAGES (WhatsApp) ===== */
+  .vue-messages { grid-template-columns:340px 1fr; }
+  .convos { border-right:1px solid var(--border); display:grid; grid-template-rows:auto auto 1fr; overflow:hidden; }
+  .convos .entete { border-bottom:1px solid var(--border); }
+  .recherche { padding:10px 14px; }
+  .recherche input { width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--ink); border-radius:11px; padding:9px 13px; font-size:13.5px; font-family:inherit; }
+  .recherche input::placeholder { color:var(--faint); }
+  .convo-liste { overflow-y:auto; }
+  .convo { display:flex; align-items:center; gap:12px; padding:11px 15px; cursor:pointer; border-left:3px solid transparent; }
+  .convo:hover { background:var(--panel); }
+  .convo.actif { background:var(--panel); border-left-color:var(--brand); }
+  .convo .av { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; font-size:15px; font-weight:800; color:#fff; flex:none; }
+  .convo .txt { flex:1; min-width:0; }
+  .convo .txt .l1 { display:flex; justify-content:space-between; gap:8px; }
+  .convo .txt b { font-size:14.5px; font-weight:620; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .convo .txt .h { font-size:11.5px; color:var(--faint); flex:none; }
+  .convo .txt .apercu { font-size:13px; color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+  .convo .nonlu { min-width:19px; height:19px; padding:0 5px; border-radius:999px; background:var(--brand); color:#06130c; font-size:11px; font-weight:800; display:grid; place-items:center; }
+
+  .chat { display:grid; grid-template-rows:auto 1fr auto; overflow:hidden; background:linear-gradient(180deg,#0d1611,#0e1712); }
+  .chat-tete { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--border); background:var(--rail); }
+  .chat-tete .av { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:14px; font-weight:800; color:#fff; }
+  .chat-tete b { font-size:15px; font-weight:640; }
+  .chat-tete .st { font-size:12px; color:var(--faint); }
+  .chat-corps { overflow-y:auto; padding:18px 18px 8px; display:flex; flex-direction:column; gap:6px; }
+  .jour { text-align:center; margin:8px 0; }
+  .jour span { background:var(--panel-2); color:var(--faint); font-size:11.5px; font-weight:700; padding:4px 12px; border-radius:999px; }
+  .bulle { max-width:74%; padding:8px 12px; border-radius:14px; font-size:14px; line-height:1.45; position:relative; }
+  .bulle .exp { font-size:12px; font-weight:800; margin-bottom:2px; }
+  .bulle .t { font-size:10.5px; color:var(--faint); float:right; margin:6px 0 -2px 10px; }
+  .bulle.eux { background:var(--them); border:1px solid var(--border); align-self:flex-start; border-bottom-left-radius:5px; }
+  .bulle.moi { background:var(--me); align-self:flex-end; border-bottom-right-radius:5px; }
+  .bulle.moi .t { color:rgba(255,255,255,.55); }
+  .chat-saisie { display:flex; gap:10px; padding:12px 16px; border-top:1px solid var(--border); background:var(--rail); }
+  .chat-saisie input { flex:1; background:var(--panel-2); border:1px solid var(--border); color:var(--ink); border-radius:22px; padding:11px 16px; font-size:14px; font-family:inherit; }
+  .chat-saisie input::placeholder { color:var(--faint); }
+  .chat-saisie input:focus { outline:none; border-color:var(--brand); }
+  .envoyer { width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg,#48d089,var(--brand-deep)); color:#06130c; cursor:pointer; display:grid; place-items:center; flex:none; }
+
+  /* ---------- Composer (modale) ---------- */
+  .modal { position:fixed; inset:0; background:rgba(4,10,7,.6); backdrop-filter:blur(4px); display:none; place-items:center; z-index:500; padding:20px; }
+  .modal.on { display:grid; }
+  .modal-carte { width:min(480px,100%); background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:22px; }
+  .modal-carte h2 { margin:0 0 4px; font-size:18px; }
+  .modal-carte .note { color:var(--faint); font-size:12.5px; margin-bottom:16px; }
+  .modal-carte label { display:block; font-size:11.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--soft); margin:12px 0 6px; }
+  .modal-carte input[type=text], .modal-carte textarea, .modal-carte select { width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--ink); border-radius:12px; padding:11px 13px; font-size:14px; font-family:inherit; }
+  .modal-carte textarea { min-height:110px; resize:vertical; }
+  .modal-ligne { display:flex; align-items:center; gap:8px; margin-top:12px; color:var(--soft); font-size:13.5px; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+
+  .vide { display:grid; place-items:center; height:100%; text-align:center; color:var(--faint); padding:30px; }
+
+  /* ---------- Fée (chargement) — reprise de famiformation ---------- */
+  .fee-back { position:fixed; inset:0; z-index:900; background:radial-gradient(circle at 50% 40%,#14261a,#070d09); display:none; align-items:center; justify-content:center; opacity:0; transition:opacity .25s; }
+  .fee-back.on { display:flex; opacity:1; }
+  .fee-scene { text-align:center; width:min(520px,92vw); }
+  .fee-duo { display:flex; align-items:flex-end; justify-content:center; gap:8px; position:relative; }
+  .fee-perso { width:min(200px,40vw); height:auto; display:block; animation:feeFlotte 3s ease-in-out infinite; transform-origin:50% 70%; }
+  @keyframes feeFlotte { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-9px) rotate(1deg)} }
+  .fee-ailes { animation:feeAiles 1.5s ease-in-out infinite; transform-origin:300px 300px; }
+  @keyframes feeAiles { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(.9)} }
+  .fee-bras { animation:feeCoup 2s cubic-bezier(.36,.07,.3,1) infinite; transform-origin:340px 342px; }
+  @keyframes feeCoup { 0%,40%{transform:rotate(0)} 52%{transform:rotate(-26deg)} 62%{transform:rotate(22deg)} 72%{transform:rotate(-6deg)} 82%,100%{transform:rotate(0)} }
+  .fee-halo { animation:feeHalo 2s ease-in-out infinite; transform-origin:405px 247px; }
+  @keyframes feeHalo { 0%,45%,100%{opacity:.5;transform:scale(.85)} 62%{opacity:1;transform:scale(1.35)} }
+  .fee-yeux { animation:feeCligne 4.5s infinite; transform-origin:300px 232px; }
+  @keyframes feeCligne { 0%,94%,100%{transform:scaleY(1)} 97%{transform:scaleY(.1)} }
+  .fee-plante { width:min(150px,30vw); height:auto; display:block; }
+  .fee-plant { display:none; }
+  .fee-plant.on { display:block; animation:feePousse .55s cubic-bezier(.2,1.6,.4,1), feeBalance 3.2s ease-in-out .55s infinite; transform-origin:110px 172px; }
+  @keyframes feePousse { from{transform:scale(.15) translateY(20px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+  @keyframes feeBalance { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg)} }
+  .fee-etincelles { position:absolute; left:52%; top:34%; width:1px; height:1px; }
+  .fee-et { position:absolute; width:9px; height:9px; background:#B5D95A; border-radius:2px; box-shadow:0 0 8px rgba(141,198,63,.9); animation:feeVole 1.4s ease-in forwards; }
+  @keyframes feeVole { 0%{transform:translate(0,0) scale(.4) rotate(0);opacity:0} 20%{opacity:1} 100%{transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(220deg);opacity:0} }
+  .fee-barre { width:min(300px,80%); height:8px; margin:22px auto 0; background:rgba(255,255,255,.14); border-radius:999px; overflow:hidden; }
+  .fee-barre span { display:block; height:100%; width:35%; border-radius:999px; background:linear-gradient(90deg,#8DC63F,#1E6B33); animation:feeIndef 1.15s ease-in-out infinite; }
+  @keyframes feeIndef { 0%{transform:translateX(-115%)} 100%{transform:translateX(320%)} }
+  .fee-txt { margin-top:14px; color:#DCEBD6; font-weight:700; font-size:.95rem; }
+
+  @media (max-width:820px) {
+    .app { grid-template-columns:64px 1fr; }
+    .vue-messages { grid-template-columns:1fr; }
+    .vue-messages.chat-ouvert .convos { display:none; }
+    .vue-messages:not(.chat-ouvert) .chat { display:none; }
   }
-  dialog::backdrop { background: rgba(36,48,27,0.45); }
-  .form-pub { padding: 1.8rem; }
-  .form-pub h2 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    color: var(--vert-fonce);
-    margin-bottom: 1.2rem;
-  }
-  .form-pub label {
-    display: block;
-    font-weight: 800;
-    font-size: 0.88rem;
-    color: var(--encre);
-    margin: 0.9rem 0 0.25rem;
-  }
-  .form-pub input, .form-pub select, .form-pub textarea {
-    width: 100%;
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    padding: 0.6rem 0.9rem;
-    border: 2px solid var(--vert-pale);
-    border-radius: 10px;
-    background: var(--fond);
-  }
-  .form-pub textarea { min-height: 110px; resize: vertical; }
-  .form-pub .case { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
-  .form-pub .case input { width: auto; }
-  .form-pub .actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.4rem; }
-  .note-fiable {
-    background: var(--or-pale);
-    border-left: 4px solid var(--or-magique);
-    font-size: 0.85rem;
-    padding: 0.6rem 0.9rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-    color: #6d4f00;
-  }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
 </style>
 </head>
 <body>
 
-<!-- Écran de chargement magique -->
-<div id="chargement" aria-hidden="true">
-  <div>
-    <img id="feeAnim" src="../assets/img/fee/frame_01_position_normale.png" alt="">
-    <p>La fée prépare vos annonces…</p>
+<div class="app">
+  <!-- Icône-rail -->
+  <nav class="rail">
+    <div class="mark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 9-10 1 6-2 10-7 11"/><path d="M11 20c0-4 2-7 6-8"/></svg></div>
+    <button class="nav-btn actif" data-vue="actus" title="Actus"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></button>
+    <button class="nav-btn" data-vue="messages" title="Messages"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg><span class="pastille" id="railNonlu">4</span></button>
+    <div class="grow"></div>
+    <a class="nav-btn" href="../index.php" target="_top" title="Retour au portail"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+    <div class="avatar" style="background:linear-gradient(150deg,#6cc492,#1c6b41)">JH</div>
+  </nav>
+
+  <div class="main">
+    <!-- ===== ACTUS ===== -->
+    <section class="vue vue-actus actif">
+      <div class="entete">
+        <div style="flex:1"><h1>Actualités</h1><div class="sous">Les informations essentielles de l'équipe communication</div></div>
+        <button class="btn btn-brand" id="btnPublier"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Publier</button>
+      </div>
+      <div class="feed-scroll"><div class="feed" id="feed"></div></div>
+    </section>
+
+    <!-- ===== MESSAGES ===== -->
+    <section class="vue vue-messages">
+      <div class="convos">
+        <div class="entete"><h1>Messages</h1></div>
+        <div class="recherche"><input type="search" placeholder="Rechercher une conversation…" id="rechConvo"></div>
+        <div class="convo-liste" id="convoListe"></div>
+      </div>
+      <div class="chat" id="chat">
+        <div class="vide" id="chatVide">Sélectionnez une conversation pour commencer 💬</div>
+        <div id="chatContenu" style="display:none; grid-template-rows:auto 1fr auto; height:100%;">
+          <div class="chat-tete" id="chatTete"></div>
+          <div class="chat-corps" id="chatCorps"></div>
+          <form class="chat-saisie" id="chatSaisie">
+            <input type="text" id="chatInput" placeholder="Écrivez un message…" autocomplete="off">
+            <button class="envoyer" type="submit" aria-label="Envoyer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg></button>
+          </form>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
-<header class="topbar">
-  <img class="logo" src="../assets/img/logo.png" alt="Famiflora">
-  <div class="titre-app">fami<span>Com</span></div>
-  <nav aria-label="Navigation principale">
-    <a href="../index.php" target="_top">← famiPortail</a>
-    <a href="index.html" class="actif">famiCom</a>
-  </nav>
-</header>
-
-<main class="conteneur">
-
-  <section class="intro">
-    <img src="../assets/img/fee/01_normale.png" alt="La fée Famiflora">
-    <div>
-      <h1>Les communications officielles Famiflora</h1>
-      <p class="sous-titre">Tout ce qui est publié ici est <strong>vérifié et fiable</strong>. En cas de doute sur une information entendue ailleurs : c'est famiCom qui fait foi. ✦</p>
+<!-- Composer -->
+<div class="modal" id="modalPublier">
+  <div class="modal-carte">
+    <h2>Nouvelle publication</h2>
+    <div class="note">Réservé à l'équipe communication · visible par tout le personnel</div>
+    <label for="pTitre">Titre</label>
+    <input type="text" id="pTitre" placeholder="Ex. : Fermeture exceptionnelle lundi">
+    <label for="pCat">Catégorie</label>
+    <select id="pCat"><option>Direction</option><option>RH</option><option>Magasins</option><option>IT</option><option>Événements</option></select>
+    <label for="pTexte">Message</label>
+    <textarea id="pTexte" placeholder="Votre information…"></textarea>
+    <label class="modal-ligne"><input type="checkbox" id="pEpingle"> Épingler en haut du fil</label>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="pAnnuler">Annuler</button>
+      <button class="btn btn-brand" id="pPublier">Publier</button>
     </div>
-  </section>
-
-  <div class="barre-outils">
-    <button class="filtre actif" data-cat="toutes">Toutes</button>
-    <button class="filtre" data-cat="Direction">Direction</button>
-    <button class="filtre" data-cat="RH">RH</button>
-    <button class="filtre" data-cat="Magasins">Magasins</button>
-    <button class="filtre" data-cat="IT">IT</button>
-    <button class="filtre" data-cat="Événements">Événements</button>
-    <input type="search" id="rechercheAnnonces" placeholder="Rechercher une annonce…" aria-label="Rechercher une annonce">
-    <button class="btn btn-vert" id="btnOuvrirPub">+ Publier</button>
   </div>
+</div>
 
-  <section id="flux" aria-live="polite"></section>
-
-  <div id="etatVide">
-    <img src="../assets/img/fee/06_desolee.png" alt="">
-    <p>Oups… la fée n'a trouvé aucune annonce correspondante.</p>
+<!-- Fée (chargement) -->
+<div class="fee-back" id="feeBack" aria-hidden="true">
+  <div class="fee-scene">
+    <div class="fee-duo">
+      <svg class="fee-perso" viewBox="130 20 360 490" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="fS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBE1C4"/><stop offset="1" stop-color="#F3CBA3"/></linearGradient>
+          <linearGradient id="fH" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#94512F"/><stop offset="1" stop-color="#6E3A22"/></linearGradient>
+          <linearGradient id="fD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9D454"/><stop offset="1" stop-color="#84BD3C"/></linearGradient>
+          <radialGradient id="fG"><stop offset="0" stop-color="#EAF6CE" stop-opacity=".85"/><stop offset=".5" stop-color="#C9E58B" stop-opacity=".4"/><stop offset="1" stop-color="#8DC63F" stop-opacity="0"/></radialGradient>
+        </defs>
+        <g class="fee-ailes">
+          <path d="M298 318 Q 156 330 140 160 Q 270 152 298 318 Z" fill="#1E6B33"/><path d="M280 296 Q 186 306 176 192 Q 256 186 280 296 Z" fill="#8DC63F"/>
+          <path d="M302 318 Q 444 330 460 160 Q 330 152 302 318 Z" fill="#1E6B33"/><path d="M320 296 Q 414 306 424 192 Q 344 186 320 296 Z" fill="#8DC63F"/>
+          <path d="M298 330 Q 178 322 170 456 Q 262 466 298 330 Z" fill="#1E6B33"/><path d="M290 340 Q 210 334 206 416 Q 258 424 290 340 Z" fill="#8DC63F"/>
+          <path d="M302 330 Q 422 322 430 456 Q 338 466 302 330 Z" fill="#1E6B33"/><path d="M310 340 Q 390 334 394 416 Q 342 424 310 340 Z" fill="#8DC63F"/>
+        </g>
+        <path d="M282 436 Q 279 462 277 484" stroke="url(#fS)" stroke-width="14" stroke-linecap="round" fill="none"/><path d="M318 436 Q 321 462 323 484" stroke="url(#fS)" stroke-width="14" stroke-linecap="round" fill="none"/>
+        <ellipse cx="274" cy="492" rx="16" ry="9" fill="#1E6B33"/><ellipse cx="326" cy="492" rx="16" ry="9" fill="#1E6B33"/>
+        <path d="M288 298 L 312 298 L 311 336 L 289 336 Z" fill="#F3CBA3"/>
+        <path d="M250 414 L 262 444 L 276 416 L 290 448 L 300 418 L 310 448 L 324 416 L 338 444 L 350 414 Z" fill="#1E6B33"/>
+        <path d="M258 330 Q 300 318 342 330 L 352 422 Q 300 438 248 422 Z" fill="url(#fD)"/>
+        <path d="M260 342 Q 240 360 246 384 Q 252 396 264 396" stroke="url(#fS)" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <circle cx="300" cy="220" r="92" fill="url(#fS)"/>
+        <circle cx="300" cy="72" r="37" fill="url(#fH)"/><path d="M326 52 Q 342 34 364 36 Q 356 58 334 64 Z" fill="#8DC63F"/>
+        <path d="M204 258 Q 184 112 300 88 Q 416 112 396 258 Q 386 262 380 252 Q 386 202 356 178 Q 336 158 300 152 Q 264 158 244 178 Q 214 202 220 252 Q 214 262 204 258 Z" fill="url(#fH)"/>
+        <path d="M222 236 Q 216 262 226 284 Q 236 274 234 248 Q 228 238 222 236 Z" fill="url(#fH)"/><path d="M378 236 Q 384 262 374 284 Q 364 274 366 248 Q 372 238 378 236 Z" fill="url(#fH)"/>
+        <path d="M241 214 Q 262 199 283 212" stroke="#8DC63F" stroke-width="7" stroke-linecap="round" fill="none" opacity=".8"/><path d="M317 212 Q 338 199 359 214" stroke="#8DC63F" stroke-width="7" stroke-linecap="round" fill="none" opacity=".8"/>
+        <g class="fee-yeux"><circle cx="262" cy="232" r="20" fill="#1E4020"/><circle cx="338" cy="232" r="20" fill="#1E4020"/><circle cx="269" cy="224" r="7" fill="#fff"/><circle cx="345" cy="224" r="7" fill="#fff"/></g>
+        <ellipse cx="230" cy="268" rx="17" ry="10.5" fill="#F0A96B" opacity=".6"/><ellipse cx="370" cy="268" rx="17" ry="10.5" fill="#F0A96B" opacity=".6"/>
+        <path d="M280 270 Q 300 292 320 270 Q 312 286 300 286 Q 288 286 280 270 Z" fill="#1A1A1A"/>
+        <g class="fee-bras">
+          <path d="M340 342 Q 366 330 380 306" stroke="url(#fS)" stroke-width="12" stroke-linecap="round" fill="none"/><circle cx="381" cy="303" r="9" fill="#F3CBA3"/>
+          <line x1="382" y1="300" x2="402" y2="254" stroke="#8A5B36" stroke-width="6" stroke-linecap="round"/>
+          <circle class="fee-halo" cx="405" cy="247" r="42" fill="url(#fG)"/>
+          <path d="M405 218 l8 21 21 8 -21 8 -8 21 -8 -21 -21 -8 21 -8 Z" fill="#8DC63F"/><circle cx="405" cy="247" r="6.5" fill="#1E6B33"/>
+        </g>
+      </svg>
+      <div class="fee-etincelles" id="feeEt"></div>
+      <svg class="fee-plante" viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="pP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C97B4A"/><stop offset="1" stop-color="#9C5730"/></linearGradient><linearGradient id="pT" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#2E7D3B"/><stop offset="1" stop-color="#8DC63F"/></linearGradient></defs>
+        <path d="M56 168 L164 168 L152 246 Q 110 254 68 246 Z" fill="url(#pP)"/><rect x="48" y="150" width="124" height="24" rx="7" fill="#D98A57"/><ellipse cx="110" cy="172" rx="52" ry="9" fill="#5C3A21"/>
+        <g class="fee-plant"><path d="M110 170 Q 106 118 111 74" stroke="url(#pT)" stroke-width="7.5" stroke-linecap="round" fill="none"/><path d="M110 96 Q 78 76 72 102 Q 92 120 110 96 Z" fill="#8DC63F"/><path d="M111 108 Q 144 88 150 114 Q 129 132 111 108 Z" fill="#A9D454"/><g transform="translate(111,62)"><ellipse cx="-17" cy="0" rx="13" ry="9" fill="#F2A9C4"/><ellipse cx="17" cy="0" rx="13" ry="9" fill="#F2A9C4"/><ellipse cx="0" cy="-16" rx="9" ry="13" fill="#F6BDD2"/><ellipse cx="0" cy="16" rx="9" ry="13" fill="#F6BDD2"/><circle r="9" fill="#E8C46B"/></g></g>
+        <g class="fee-plant"><rect x="97" y="90" width="26" height="82" rx="13" fill="#4E9E52"/><path d="M97 126 Q 80 126 80 110 Q 80 102 87 102" stroke="#4E9E52" stroke-width="12" stroke-linecap="round" fill="none"/><path d="M123 138 Q 140 138 140 122 Q 140 114 133 114" stroke="#4E9E52" stroke-width="12" stroke-linecap="round" fill="none"/><ellipse cx="110" cy="84" rx="10" ry="7.5" fill="#F26E7E"/></g>
+        <g class="fee-plant"><rect x="102" y="96" width="16" height="74" rx="5" fill="#8A5B36"/><circle cx="110" cy="64" r="40" fill="#2E7D3B"/><circle cx="78" cy="84" r="28" fill="#3C9147"/><circle cx="142" cy="84" r="28" fill="#3C9147"/><circle cx="110" cy="82" r="32" fill="#5EA843"/><circle cx="92" cy="58" r="6" fill="#F2A9C4"/><circle cx="130" cy="66" r="6" fill="#F6BDD2"/></g>
+        <g class="fee-plant"><path d="M110 170 Q 108 122 111 76" stroke="url(#pT)" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M110 116 Q 82 104 78 126 Q 96 136 110 116 Z" fill="#3C9147"/><g transform="translate(111,64)" fill="#F4B41A"><ellipse cx="0" cy="-18" rx="6" ry="12"/><ellipse cx="0" cy="18" rx="6" ry="12"/><ellipse cx="-18" cy="0" rx="12" ry="6"/><ellipse cx="18" cy="0" rx="12" ry="6"/><ellipse cx="-13" cy="-13" rx="9" ry="7"/><ellipse cx="13" cy="-13" rx="9" ry="7"/><ellipse cx="-13" cy="13" rx="9" ry="7"/><ellipse cx="13" cy="13" rx="9" ry="7"/></g><circle cx="111" cy="64" r="11" fill="#6E4523"/></g>
+        <g class="fee-plant"><path d="M100 170 Q 97 142 104 124 L 118 124 Q 125 142 122 170 Z" fill="#F3E9D6"/><path d="M72 126 Q 82 86 111 86 Q 140 86 150 126 Q 111 138 72 126 Z" fill="#D8483B"/><circle cx="96" cy="110" r="5" fill="#FBEFE0"/><circle cx="120" cy="104" r="6" fill="#FBEFE0"/><circle cx="132" cy="118" r="4" fill="#FBEFE0"/></g>
+      </svg>
+    </div>
+    <div class="fee-barre"><span></span></div>
+    <div class="fee-txt" id="feeTxt">Un instant…</div>
   </div>
-
-</main>
-
-<!-- Fenêtre de publication -->
-<dialog id="dialoguePub">
-  <form class="form-pub" id="formPub" method="dialog">
-    <h2>✦ Publier une annonce officielle</h2>
-    <label for="pubTitre">Titre</label>
-    <input id="pubTitre" required maxlength="120" placeholder="Ex. : Nouveaux horaires d'été">
-    <label for="pubCat">Catégorie</label>
-    <select id="pubCat">
-      <option>Direction</option>
-      <option>RH</option>
-      <option>Magasins</option>
-      <option>IT</option>
-      <option>Événements</option>
-    </select>
-    <label for="pubAuteur">Publié par</label>
-    <input id="pubAuteur" required placeholder="Votre nom ou service">
-    <label for="pubTexte">Message</label>
-    <textarea id="pubTexte" required placeholder="Votre annonce…"></textarea>
-    <div class="case">
-      <input type="checkbox" id="pubEpingle">
-      <label for="pubEpingle" style="margin:0">📌 Épingler en haut du flux</label>
-    </div>
-    <div id="champCode">
-      <label for="pubCode">Code de publication</label>
-      <input id="pubCode" type="password" autocomplete="off" placeholder="Code réservé aux publicateurs">
-    </div>
-    <p class="note-fiable">Rappel : famiCom est la source officielle. Ne publiez que des informations validées par votre service.</p>
-    <div class="actions">
-      <button type="button" class="btn btn-clair" id="btnAnnuler">Annuler</button>
-      <button type="submit" class="btn btn-vert">Publier l'annonce</button>
-    </div>
-  </form>
-</dialog>
-
-<footer class="pied">
-  famiCom · La source fiable des informations Famiflora
-</footer>
+</div>
 
 <script>
-/* ============ Animation de chargement (coup de baguette) ============ */
-const frames = [
-  '../assets/img/fee/frame_01_position_normale.png',
-  '../assets/img/fee/frame_02_baguette_levee.png',
-  '../assets/img/fee/frame_03_coup_vers_le_bas.png',
-  '../assets/img/fee/frame_04_coup_remonte.png',
-  '../assets/img/fee/frame_05_explosion_magique.png'
-];
-frames.forEach(src => { const i = new Image(); i.src = src; });
-const feeAnim = document.getElementById('feeAnim');
-let f = 0;
-const anim = setInterval(() => {
-  f = (f + 1) % frames.length;
-  feeAnim.src = frames[f];
-}, 220);
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    clearInterval(anim);
-    document.getElementById('chargement').classList.add('fini');
-  }, 1400);
-});
+/* ============ Données d'exemple (backend branché ensuite) ============ */
+const COULEURS = ["#e0aa46,#b67d24","#54abc2,#2f7d92","#8a78b8,#5a4b86","#34a866,#17603a","#d1727f,#9c4b5a","#5487c2,#2f5a92","#3fae99,#1f7d6b"];
+function grad(i){ return "linear-gradient(150deg,"+COULEURS[i%COULEURS.length]+")"; }
+function inits(n){ return n.split(" ").map(m=>m[0]).slice(0,2).join("").toUpperCase(); }
+function echap(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
 
-/* ============ Données ============ */
-const CLE = 'famicom_annonces_v1';
-
-const annoncesDemo = [
-  {
-    id: 1, titre: 'Bienvenue sur famiCom, votre nouvelle source officielle !',
-    categorie: 'Direction', auteur: 'Direction générale',
-    date: '2026-07-10', epinglee: true,
-    texte: "famiCom devient le canal unique des communications internes Famiflora. Toute information publiée ici est vérifiée et validée. Fini les rumeurs de couloir : en cas de doute, vérifiez sur famiCom !"
-  },
-  {
-    id: 2, titre: "Horaires d'été des magasins",
-    categorie: 'Magasins', auteur: 'Coordination magasins',
-    date: '2026-07-08', epinglee: false,
-    texte: "Du 15 juillet au 31 août, tous les magasins passent aux horaires d'été : ouverture de 9h à 19h en semaine, 9h à 18h30 le samedi. Les plannings détaillés arrivent dans famiPlanning."
-  },
-  {
-    id: 3, titre: 'Maintenance informatique ce vendredi soir',
-    categorie: 'IT', auteur: 'Service informatique',
-    date: '2026-07-07', epinglee: false,
-    texte: "Les caisses et l'intranet seront indisponibles vendredi de 22h à minuit pour une mise à jour de sécurité. Pensez à clôturer vos sessions avant 21h45."
-  },
-  {
-    id: 4, titre: 'Barbecue annuel du personnel — inscrivez-vous !',
-    categorie: 'Événements', auteur: 'Comité des fêtes',
-    date: '2026-07-05', epinglee: false,
-    texte: "Le barbecue annuel aura lieu le samedi 22 août. Familles bienvenues ! Inscriptions auprès de votre responsable avant le 10 août."
-  },
-  {
-    id: 5, titre: 'Nouvelle procédure de demande de congés',
-    categorie: 'RH', auteur: 'Ressources humaines',
-    date: '2026-07-02', epinglee: false,
-    texte: "À partir du 1er septembre, les demandes de congés se feront exclusivement via famiRH. Les formulaires papier ne seront plus acceptés après cette date."
-  }
+let POSTS = [
+  { auteur:"Direction générale", cat:"Direction", epingle:true, titre:"famiCom devient le canal officiel", texte:"Toute information publiée ici est vérifiée et validée. En cas de doute, c'est famiCom qui fait foi !", temps:"il y a 2 h", aime:24, jaime:false, comm:5, media:"linear-gradient(135deg,#1c6b41,#0e3a22)", emoji:"📣" },
+  { auteur:"Service RH", cat:"RH", epingle:false, titre:"Congés d'été : pensez à vos demandes", texte:"Merci de déposer vos demandes de congés pour juillet-août avant le 30 du mois via famiRH.", temps:"il y a 5 h", aime:12, jaime:true, comm:3, media:"", emoji:"" },
+  { auteur:"Équipe IT", cat:"IT", epingle:false, titre:"Maintenance des caisses mardi soir", texte:"Une mise à jour aura lieu mardi entre 20h et 22h. Les caisses pourraient être indisponibles quelques minutes.", temps:"hier", aime:8, jaime:false, comm:1, media:"", emoji:"" },
 ];
 
-/* Mode serveur (IONOS) : les annonces viennent de api.php, partagées par tous.
-   Mode démo (fichier ouvert en local) : repli sur localStorage. */
-const API = 'api.php';
-let modeServeur = location.protocol.startsWith('http');
+let CONVOS = [
+  { id:1, groupe:true, nom:"Direction", apercu:"Marie : Réunion déplacée à 15h", h:"14:22", nonlu:2, membres:8 },
+  { id:2, groupe:true, nom:"Magasin Anderlecht", apercu:"Thomas : Livraison bien reçue 👍", h:"13:05", nonlu:0, membres:14 },
+  { id:3, groupe:false, nom:"Marie Dubois", apercu:"Tu peux valider le planning ?", h:"12:40", nonlu:1, membres:0 },
+  { id:4, groupe:true, nom:"Équipe Com", apercu:"Vous : Je publie l'annonce ce soir", h:"11:18", nonlu:0, membres:5 },
+  { id:5, groupe:false, nom:"Thomas Laurent", apercu:"Merci beaucoup !", h:"hier", nonlu:1, membres:0 },
+];
 
-function chargerLocal() {
-  try {
-    const brut = localStorage.getItem(CLE);
-    if (brut) return JSON.parse(brut);
-  } catch (e) {}
-  return annoncesDemo.slice();
-}
-function sauverLocal() {
-  try { localStorage.setItem(CLE, JSON.stringify(annonces)); } catch (e) {}
-}
+const MSGS = {
+  1:[ {exp:"Marie Dubois",moi:false,t:"14:20",txt:"Bonjour à tous, la réunion de ce jour est déplacée à 15h."},
+      {exp:"Marie Dubois",moi:false,t:"14:21",txt:"Merci de prévenir vos équipes 🙏"},
+      {moi:true,t:"14:22",txt:"C'est noté, je transmets."} ],
+  2:[ {exp:"Thomas",moi:false,t:"13:05",txt:"Livraison bien reçue 👍"} ],
+  3:[ {exp:"Marie Dubois",moi:false,t:"12:40",txt:"Tu peux valider le planning de la semaine ?"} ],
+  4:[ {exp:"Sophie",moi:false,t:"11:10",txt:"On publie quoi cette semaine ?"},
+      {moi:true,t:"11:18",txt:"Je publie l'annonce ce soir 😉"} ],
+  5:[ {exp:"Thomas Laurent",moi:false,t:"hier",txt:"Merci beaucoup !"} ],
+};
 
-async function chargerDepuisServeur() {
-  const rep = await fetch(API);
-  if (!rep.ok) throw new Error('API indisponible');
-  return rep.json();
-}
-
-let annonces = [];
-let categorieActive = 'toutes';
-let requete = '';
-
-/* ============ Affichage ============ */
-const flux = document.getElementById('flux');
-const etatVide = document.getElementById('etatVide');
-
-function formaterDate(iso) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-BE', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  });
-}
-
-function echapper(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-function afficher() {
-  const q = requete.toLowerCase();
-  const visibles = annonces
-    .filter(a => categorieActive === 'toutes' || a.categorie === categorieActive)
-    .filter(a => (a.titre + ' ' + a.texte + ' ' + a.auteur).toLowerCase().includes(q))
-    .sort((a, b) => (b.epinglee - a.epinglee) || b.date.localeCompare(a.date));
-
-  flux.innerHTML = visibles.map(a => `
-    <article class="annonce ${a.epinglee ? 'epinglee' : ''}">
-      <div class="entete">
-        ${a.epinglee ? '<span class="badge badge-epingle">📌 Épinglé</span>' : ''}
-        <span class="badge badge-officiel">✦ Officiel</span>
-        <span class="badge badge-categorie">${echapper(a.categorie)}</span>
-      </div>
-      <h3>${echapper(a.titre)}</h3>
-      <p>${echapper(a.texte)}</p>
-      <div class="meta">
-        <span>👤 ${echapper(a.auteur)}</span>
-        <span>🗓️ ${formaterDate(a.date)}</span>
-      </div>
-    </article>
-  `).join('');
-
-  etatVide.style.display = visibles.length ? 'none' : 'block';
-}
-
-/* ============ Filtres & recherche ============ */
-document.querySelectorAll('.filtre').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filtre').forEach(b => b.classList.remove('actif'));
-    btn.classList.add('actif');
-    categorieActive = btn.dataset.cat;
-    afficher();
+/* ============ Navigation ============ */
+const vues = { actus:document.querySelector(".vue-actus"), messages:document.querySelector(".vue-messages") };
+document.querySelectorAll(".rail .nav-btn[data-vue]").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll(".rail .nav-btn").forEach(x=>x.classList.remove("actif"));
+    b.classList.add("actif");
+    Object.values(vues).forEach(v=>v.classList.remove("actif"));
+    vues[b.dataset.vue].classList.add("actif");
   });
 });
-document.getElementById('rechercheAnnonces').addEventListener('input', e => {
-  requete = e.target.value.trim();
-  afficher();
+
+/* ============ Feed (Actus) ============ */
+const feed = document.getElementById("feed");
+function rendreFeed(){
+  const tri = [...POSTS].sort((a,b)=> (b.epingle?1:0)-(a.epingle?1:0));
+  feed.innerHTML = tri.map((p,i)=>`
+    <article class="post">
+      <div class="post-tete">
+        <div class="av" style="background:${grad(i+3)}">${inits(p.auteur)}</div>
+        <div class="qui"><b>${echap(p.auteur)}</b><div class="meta">${echap(p.temps)}</div></div>
+        ${p.epingle?'<span class="pin" title="Épinglé">📌</span>':''}
+        <span class="cat">${echap(p.cat)}</span>
+      </div>
+      ${p.media?`<div class="post-media" style="background:${p.media}">${p.emoji||''}</div>`:''}
+      <div class="post-corps"><h3>${echap(p.titre)}</h3><p>${echap(p.texte)}</p></div>
+      <div class="post-actions">
+        <button class="act ${p.jaime?'aime':''}" data-aime="${i}"><svg viewBox="0 0 24 24" fill="${p.jaime?'currentColor':'none'}" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>${p.aime}</button>
+        <button class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>${p.comm}</button>
+      </div>
+    </article>`).join("");
+  feed.querySelectorAll("[data-aime]").forEach(b=>b.addEventListener("click",()=>{
+    const p=POSTS.find((x)=>x===tri[+b.dataset.aime]); p.jaime=!p.jaime; p.aime+=p.jaime?1:-1; rendreFeed();
+  }));
+}
+rendreFeed();
+
+/* ============ Messages ============ */
+const convoListe=document.getElementById("convoListe");
+let convoActive=null;
+function rendreConvos(filtre=""){
+  convoListe.innerHTML = CONVOS.filter(c=>c.nom.toLowerCase().includes(filtre.toLowerCase())).map((c,i)=>`
+    <div class="convo ${convoActive===c.id?'actif':''}" data-c="${c.id}">
+      <div class="av" style="background:${grad(c.id)}">${c.groupe?'#':inits(c.nom)}</div>
+      <div class="txt">
+        <div class="l1"><b>${echap(c.nom)}</b><span class="h">${c.h}</span></div>
+        <div class="l1"><span class="apercu">${echap(c.apercu)}</span>${c.nonlu?`<span class="nonlu">${c.nonlu}</span>`:''}</div>
+      </div>
+    </div>`).join("");
+  convoListe.querySelectorAll("[data-c]").forEach(el=>el.addEventListener("click",()=>ouvrirConvo(+el.dataset.c)));
+}
+function ouvrirConvo(id){
+  convoActive=id;
+  const c=CONVOS.find(x=>x.id===id); c.nonlu=0;
+  document.getElementById("chatVide").style.display="none";
+  document.getElementById("chatContenu").style.display="grid";
+  document.querySelector(".vue-messages").classList.add("chat-ouvert");
+  document.getElementById("chatTete").innerHTML=`
+    <div class="av" style="background:${grad(c.id)}">${c.groupe?'#':inits(c.nom)}</div>
+    <div><b>${echap(c.nom)}</b><div class="st">${c.groupe?c.membres+' membres':'en ligne'}</div></div>`;
+  const corps=document.getElementById("chatCorps");
+  corps.innerHTML=`<div class="jour"><span>Aujourd'hui</span></div>`+ (MSGS[id]||[]).map(m=>bulle(m,c.groupe)).join("");
+  corps.scrollTop=corps.scrollHeight;
+  rendreConvos(document.getElementById("rechConvo").value);
+  majNonlu();
+}
+function bulle(m,groupe){
+  return `<div class="bulle ${m.moi?'moi':'eux'}">${(!m.moi&&groupe)?`<div class="exp" style="color:#7fd3a3">${echap(m.exp)}</div>`:''}${echap(m.txt)}<span class="t">${m.t}</span></div>`;
+}
+document.getElementById("chatSaisie").addEventListener("submit",e=>{
+  e.preventDefault();
+  const inp=document.getElementById("chatInput"); const v=inp.value.trim(); if(!v||!convoActive) return;
+  (MSGS[convoActive]=MSGS[convoActive]||[]).push({moi:true,t:"maintenant",txt:v});
+  const c=CONVOS.find(x=>x.id===convoActive); c.apercu="Vous : "+v; c.h="maintenant";
+  inp.value=""; ouvrirConvo(convoActive);
+});
+document.getElementById("rechConvo").addEventListener("input",e=>rendreConvos(e.target.value));
+function majNonlu(){ const n=CONVOS.reduce((s,c)=>s+c.nonlu,0); const b=document.getElementById("railNonlu"); b.textContent=n; b.style.display=n?'grid':'none'; }
+rendreConvos(); majNonlu();
+
+/* ============ Composer ============ */
+const modal=document.getElementById("modalPublier");
+document.getElementById("btnPublier").addEventListener("click",()=>modal.classList.add("on"));
+document.getElementById("pAnnuler").addEventListener("click",()=>modal.classList.remove("on"));
+modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("on"); });
+document.getElementById("pPublier").addEventListener("click",()=>{
+  const titre=document.getElementById("pTitre").value.trim();
+  const texte=document.getElementById("pTexte").value.trim();
+  if(!titre||!texte){ alert("Titre et message requis."); return; }
+  modal.classList.remove("on");
+  feeIndef("La fée publie votre information…");
+  setTimeout(()=>{
+    POSTS.unshift({ auteur:"Équipe Com", cat:document.getElementById("pCat").value, epingle:document.getElementById("pEpingle").checked, titre, texte, temps:"à l'instant", aime:0, jaime:false, comm:0, media:"", emoji:"" });
+    document.getElementById("pTitre").value=""; document.getElementById("pTexte").value=""; document.getElementById("pEpingle").checked=false;
+    rendreFeed(); feeHide();
+  },1900);
 });
 
-/* ============ Publication ============ */
-const dlg = document.getElementById('dialoguePub');
-document.getElementById('btnOuvrirPub').addEventListener('click', () => dlg.showModal());
-document.getElementById('btnAnnuler').addEventListener('click', () => dlg.close());
-
-document.getElementById('formPub').addEventListener('submit', async (e) => {
-  const nouvelle = {
-    titre: document.getElementById('pubTitre').value.trim(),
-    categorie: document.getElementById('pubCat').value,
-    auteur: document.getElementById('pubAuteur').value.trim(),
-    texte: document.getElementById('pubTexte').value.trim(),
-    epinglee: document.getElementById('pubEpingle').checked,
-    date: new Date().toISOString().slice(0, 10)
-  };
-
-  if (modeServeur) {
-    e.preventDefault();
-    nouvelle.code = document.getElementById('pubCode').value;
-    try {
-      const rep = await fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nouvelle)
-      });
-      const res = await rep.json();
-      if (!rep.ok) { alert(res.erreur || 'Publication impossible.'); return; }
-      annonces = await chargerDepuisServeur();
-      dlg.close();
-    } catch (err) {
-      alert('Le serveur ne répond pas. Réessayez plus tard.');
-      return;
-    }
-  } else {
-    nouvelle.id = Date.now();
-    annonces.push(nouvelle);
-    sauverLocal();
-  }
-  document.getElementById('formPub').reset();
-  afficher();
-});
-
-/* ---- Initialisation ---- */
-(async () => {
-  if (modeServeur) {
-    try {
-      annonces = await chargerDepuisServeur();
-    } catch (e) {
-      // Serveur sans PHP ? On repasse en mode démo local.
-      modeServeur = false;
-      annonces = chargerLocal();
-    }
-  } else {
-    annonces = chargerLocal();
-  }
-  // En mode démo, pas besoin du code de publication
-  document.getElementById('champCode').style.display = modeServeur ? '' : 'none';
-  afficher();
-})();
+/* ============ Fée (chargement) ============ */
+const feeBack=document.getElementById("feeBack"), feeTxt=document.getElementById("feeTxt"), feeEt=document.getElementById("feeEt");
+let plantes=null, etinc=null, pIdx=-1;
+function pousse(){ const all=document.querySelectorAll(".fee-plant"); all.forEach(g=>g.classList.remove("on")); pIdx=(pIdx+1)%all.length; all[pIdx].classList.add("on"); }
+function etincelle(){ if(!feeBack.classList.contains("on"))return; const s=document.createElement("span"); s.className="fee-et"; s.style.setProperty("--dx",(60+Math.random()*70)+"px"); s.style.setProperty("--dy",(40+Math.random()*60)+"px"); s.style.left=(Math.random()*14-7)+"px"; feeEt.appendChild(s); setTimeout(()=>s.remove(),1500); }
+function feeIndef(txt){ feeTxt.textContent=txt||"Un instant…"; feeBack.classList.add("on"); pIdx=-1; pousse(); plantes=setInterval(pousse,2200); etinc=setInterval(etincelle,650); }
+function feeHide(){ feeBack.classList.remove("on"); clearInterval(plantes); clearInterval(etinc); }
 </script>
-
 </body>
 </html>
