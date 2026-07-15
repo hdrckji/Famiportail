@@ -1,268 +1,74 @@
 /* ============================================================
-   famiPortail — Bureau (window manager)
-   Vanilla JS, sans dépendance.
+   famiPortail — Écran d'accueil (springboard type iPhone)
+   Chaque app = une icône. Tap → l'app s'ouvre (navigation).
    ============================================================ */
 (function () {
   "use strict";
 
-  // --- Catalogue des applications ---
+  // Glyphes (SVG trait fin, style moderne)
+  const G = {
+    com:      '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+    rayon:    '<path d="M2 7l2-4h16l2 4"/><path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M9 12h6"/>',
+    cloud:    '<path d="M17.5 19a4.5 4.5 0 0 0 .5-8.98A6 6 0 0 0 6.3 9.5 4 4 0 0 0 7 19h10.5z"/>',
+    rh:       '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    planning: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    stock:    '<path d="M21 8V21H3V8"/><path d="M1 3h22v5H1zM10 12h4"/>',
+    doc:      '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    idees:    '<path d="M9 18h6M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1.5.5 2.5 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/>',
+  };
+
+  // Catalogue : url locale OU adresse d'une autre app web (https://...)
   const APPS = [
-    { id: "famicom",     nom: "famiCom",      icone: "📣", url: "famicom/index.html",   vedette: true },
-    { id: "famirayon",   nom: "famiRayon",    icone: "🛒", url: "famirayon/index.html" },
-    { id: "cloud",       nom: "Espace Cloud", icone: "☁️", url: "cloud/index.html" },
-    { id: "famirh",      nom: "famiRH",       icone: "👥", bientot: true },
-    { id: "famiplanning",nom: "famiPlanning", icone: "🗓️", bientot: true },
-    { id: "famistock",   nom: "famiStock",    icone: "📦", bientot: true },
-    { id: "famidoc",     nom: "famiDoc",      icone: "📚", bientot: true },
-    { id: "famiidees",   nom: "famiIdées",    icone: "💡", bientot: true },
+    { id: "famicom",     nom: "famiCom",      url: "famicom/index.html",   glyphe: G.com,      grad: "linear-gradient(150deg,#34a866,#17603a)", pastille: "✦" },
+    { id: "famirayon",   nom: "famiRayon",    url: "famirayon/index.html", glyphe: G.rayon,    grad: "linear-gradient(150deg,#e0aa46,#b67d24)", pastille: "✨" },
+    { id: "cloud",       nom: "Espace Cloud", url: "cloud/index.html",     glyphe: G.cloud,    grad: "linear-gradient(150deg,#54abc2,#2f7d92)" },
+    { id: "famirh",      nom: "famiRH",       glyphe: G.rh,       grad: "linear-gradient(150deg,#8a78b8,#5a4b86)", bientot: true },
+    { id: "famiplanning",nom: "famiPlanning", glyphe: G.planning,grad: "linear-gradient(150deg,#d1727f,#9c4b5a)", bientot: true },
+    { id: "famistock",   nom: "famiStock",    glyphe: G.stock,   grad: "linear-gradient(150deg,#5487c2,#2f5a92)", bientot: true },
+    { id: "famidoc",     nom: "famiDoc",      glyphe: G.doc,     grad: "linear-gradient(150deg,#3fae99,#1f7d6b)", bientot: true },
+    { id: "famiidees",   nom: "famiIdées",    glyphe: G.idees,   grad: "linear-gradient(150deg,#e0aa46,#c07a24)", bientot: true },
   ];
 
-  const bureau       = document.getElementById("bureau");
-  const zoneIcones   = document.getElementById("icones-bureau");
-  const zoneTaches   = document.getElementById("taches-ouvertes");
-  const menu         = document.getElementById("menu-demarrer");
-  const menuListe    = document.getElementById("menu-liste");
-  const btnDemarrer  = document.getElementById("btn-demarrer");
+  const board = document.getElementById("springboard");
 
-  const tactile = window.matchMedia("(hover: none)").matches;
-  const fenetres = new Map();   // appId -> objet fenêtre
-  let zTop = 10;
-  let cascade = 0;
-
-  // --- Filtrage par profil : n'affiche que les outils autorisés ---
+  // Filtrage par profil
   const PORTAIL = window.PORTAIL || { outils: "*", user: { nom: "" } };
   function autorise(app) {
-    if (app.bientot) return true;                 // les teasers restent visibles
+    if (app.bientot) return true;
     if (PORTAIL.outils === "*") return true;
     const permis = String(PORTAIL.outils).split(",").map((s) => s.trim()).filter(Boolean);
     return permis.includes(app.id);
   }
-  const APPS_VISIBLES = APPS.filter(autorise);
 
-  /* ---------------- Icônes du bureau ---------------- */
-  APPS_VISIBLES.forEach((app) => {
-    const el = document.createElement("div");
-    el.className = "icone-bureau" + (app.vedette ? " vedette" : "");
+  const NS = "http://www.w3.org/2000/svg";
+  function svg(paths) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+  }
+
+  APPS.filter(autorise).forEach((app) => {
+    const el = document.createElement(app.bientot ? "div" : "a");
+    el.className = "app-icone" + (app.bientot ? " bientot" : "");
     el.setAttribute("role", "listitem");
-    el.tabIndex = 0;
-    el.innerHTML =
-      '<div class="glyphe">' + app.icone + "</div>" +
-      '<div class="etiquette">' + app.nom +
-      (app.bientot ? '<br><span class="badge-soon">Bientôt</span>' : "") +
-      "</div>";
-
-    const ouvrir = () => lancer(app);
-    if (tactile) {
-      el.addEventListener("click", ouvrir);
-    } else {
-      el.addEventListener("click", () => selectionner(el));
-      el.addEventListener("dblclick", ouvrir);
-    }
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter") ouvrir(); });
-    zoneIcones.appendChild(el);
-  });
-
-  function selectionner(el) {
-    document.querySelectorAll(".icone-bureau.sel").forEach((i) => i.classList.remove("sel"));
-    el.classList.add("sel");
-  }
-  bureau.addEventListener("mousedown", (e) => {
-    if (e.target === bureau) {
-      document.querySelectorAll(".icone-bureau.sel").forEach((i) => i.classList.remove("sel"));
-    }
-  });
-
-  /* ---------------- Lanceur d'applications ---------------- */
-  APPS_VISIBLES.forEach((app) => {
-    const b = document.createElement("button");
-    b.className = "menu-item";
-    b.setAttribute("role", "menuitem");
-    b.innerHTML = '<span class="m-glyphe">' + app.icone + "</span>" + app.nom;
-    if (app.bientot) b.disabled = true;
-    b.addEventListener("click", () => { lancer(app); fermerMenu(); });
-    menuListe.appendChild(b);
-  });
-
-  function ouvrirMenu() { menu.hidden = false; btnDemarrer.setAttribute("aria-expanded", "true"); }
-  function fermerMenu() { menu.hidden = true;  btnDemarrer.setAttribute("aria-expanded", "false"); }
-  btnDemarrer.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menu.hidden ? ouvrirMenu() : fermerMenu();
-  });
-  document.addEventListener("click", (e) => {
-    if (!menu.hidden && !menu.contains(e.target) && e.target !== btnDemarrer) fermerMenu();
-  });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerMenu(); });
-
-  /* ---------------- Lancement d'une app ---------------- */
-  function lancer(app) {
-    if (app.bientot) { toast(app.nom + " arrive bientôt 🌱"); return; }
-    if (fenetres.has(app.id)) {
-      const f = fenetres.get(app.id);
-      if (f.el.classList.contains("min")) restaurer(f);
-      focus(f);
-      return;
-    }
-    creerFenetre(app);
-  }
-
-  /* ---------------- Création d'une fenêtre ---------------- */
-  function creerFenetre(app) {
-    const el = document.createElement("section");
-    el.className = "fenetre";
-    el.setAttribute("role", "dialog");
-    el.setAttribute("aria-label", app.nom);
+    if (!app.bientot) { el.href = app.url; el.target = app.cible || "_self"; }
+    else { el.tabIndex = 0; }
 
     el.innerHTML =
-      '<header class="fenetre-titre">' +
-        '<span class="t-glyphe">' + app.icone + "</span>" +
-        '<span class="t-nom">' + app.nom + "</span>" +
-        '<div class="fenetre-controls">' +
-          '<button class="reduire"  title="Réduire" aria-label="Réduire">—</button>' +
-          '<button class="agrandir" title="Agrandir" aria-label="Agrandir">▢</button>' +
-          '<button class="fermer"   title="Fermer" aria-label="Fermer">✕</button>' +
-        "</div>" +
-      "</header>" +
-      '<div class="fenetre-corps">' +
-        '<div class="voile-iframe"></div>' +
-        '<iframe src="' + app.url + '" title="' + app.nom + '" loading="lazy"></iframe>' +
+      '<div class="tuile-wrap">' +
+        '<div class="tuile" style="background:' + app.grad + '">' + svg(app.glyphe) + "</div>" +
+        (app.pastille ? '<span class="pastille">' + app.pastille + "</span>" : "") +
       "</div>" +
-      '<div class="poignee-resize" title="Redimensionner"></div>';
+      '<div class="nom">' + app.nom + "</div>";
 
-    // Taille + position en cascade
-    const largeur = Math.min(940, bureau.clientWidth - 40);
-    const hauteur = Math.min(620, bureau.clientHeight - 40);
-    const decal = (cascade % 6) * 28;
-    cascade++;
-    el.style.width  = largeur + "px";
-    el.style.height = hauteur + "px";
-    el.style.left = Math.max(10, (bureau.clientWidth - largeur) / 2 + decal - 70) + "px";
-    el.style.top  = Math.max(10, (bureau.clientHeight - hauteur) / 2 + decal - 40) + "px";
+    if (app.bientot) {
+      const dire = () => toast(app.nom + " arrive bientôt");
+      el.addEventListener("click", dire);
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter") dire(); });
+    }
+    board.appendChild(el);
+  });
 
-    bureau.appendChild(el);
-
-    const f = { id: app.id, app: app, el: el, tache: null, prevRect: null };
-    fenetres.set(app.id, f);
-
-    // Contrôles
-    el.querySelector(".fermer").addEventListener("click", () => fermer(f));
-    el.querySelector(".reduire").addEventListener("click", () => reduire(f));
-    el.querySelector(".agrandir").addEventListener("click", () => basculerMax(f));
-    el.querySelector(".fenetre-titre").addEventListener("dblclick", () => basculerMax(f));
-    el.addEventListener("mousedown", () => focus(f));
-    el.addEventListener("touchstart", () => focus(f), { passive: true });
-
-    rendreDeplacable(f);
-    rendreRedimensionnable(f);
-    ajouterTache(f);
-    focus(f);
-  }
-
-  /* ---------------- Focus / z-index ---------------- */
-  function focus(f) {
-    zTop += 1;
-    f.el.style.zIndex = zTop;
-    fenetres.forEach((g) => {
-      g.el.classList.toggle("active", g === f);
-      if (g.tache) g.tache.classList.toggle("active", g === f && !g.el.classList.contains("min"));
-    });
-  }
-
-  /* ---------------- Réduire / restaurer / agrandir ---------------- */
-  function reduire(f) {
-    f.el.classList.add("min");
-    if (f.tache) f.tache.classList.remove("active");
-  }
-  function restaurer(f) { f.el.classList.remove("min"); }
-  function basculerMax(f) {
-    f.el.classList.toggle("max");
-    focus(f);
-  }
-
-  /* ---------------- Fermeture ---------------- */
-  function fermer(f) {
-    f.el.remove();
-    if (f.tache) f.tache.remove();
-    fenetres.delete(f.id);
-  }
-
-  /* ---------------- Barre des tâches ---------------- */
-  function ajouterTache(f) {
-    const b = document.createElement("button");
-    b.className = "tache";
-    b.setAttribute("role", "listitem");
-    b.innerHTML = '<span>' + f.app.icone + '</span><span class="t-nom">' + f.app.nom + "</span>";
-    b.addEventListener("click", () => {
-      const estMin = f.el.classList.contains("min");
-      const estActive = f.el.classList.contains("active") && !estMin;
-      if (estMin) { restaurer(f); focus(f); }
-      else if (estActive) { reduire(f); }
-      else { focus(f); }
-    });
-    zoneTaches.appendChild(b);
-    f.tache = b;
-  }
-
-  /* ---------------- Déplacement ---------------- */
-  function rendreDeplacable(f) {
-    const titre = f.el.querySelector(".fenetre-titre");
-    let ox = 0, oy = 0, actif = false;
-
-    titre.addEventListener("pointerdown", (e) => {
-      if (e.target.closest(".fenetre-controls")) return;
-      if (f.el.classList.contains("max")) return;
-      actif = true;
-      focus(f);
-      const r = f.el.getBoundingClientRect();
-      ox = e.clientX - r.left;
-      oy = e.clientY - r.top;
-      document.body.classList.add("en-manip");
-      titre.setPointerCapture(e.pointerId);
-    });
-    titre.addEventListener("pointermove", (e) => {
-      if (!actif) return;
-      const maxX = bureau.clientWidth - 60;
-      const maxY = bureau.clientHeight - 40;
-      let x = e.clientX - ox;
-      let y = e.clientY - oy;
-      x = Math.min(Math.max(x, -f.el.offsetWidth + 120), maxX);
-      y = Math.min(Math.max(y, 0), maxY);
-      f.el.style.left = x + "px";
-      f.el.style.top  = y + "px";
-    });
-    const fin = () => { actif = false; document.body.classList.remove("en-manip"); };
-    titre.addEventListener("pointerup", fin);
-    titre.addEventListener("pointercancel", fin);
-  }
-
-  /* ---------------- Redimensionnement ---------------- */
-  function rendreRedimensionnable(f) {
-    const poignee = f.el.querySelector(".poignee-resize");
-    let actif = false, sx = 0, sy = 0, sw = 0, sh = 0;
-
-    poignee.addEventListener("pointerdown", (e) => {
-      if (f.el.classList.contains("max")) return;
-      actif = true;
-      focus(f);
-      sx = e.clientX; sy = e.clientY;
-      sw = f.el.offsetWidth; sh = f.el.offsetHeight;
-      document.body.classList.add("en-manip");
-      poignee.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    poignee.addEventListener("pointermove", (e) => {
-      if (!actif) return;
-      const w = Math.max(300, sw + (e.clientX - sx));
-      const h = Math.max(200, sh + (e.clientY - sy));
-      f.el.style.width  = w + "px";
-      f.el.style.height = h + "px";
-    });
-    const fin = () => { actif = false; document.body.classList.remove("en-manip"); };
-    poignee.addEventListener("pointerup", fin);
-    poignee.addEventListener("pointercancel", fin);
-  }
-
-  /* ---------------- Toast ---------------- */
+  /* ---------- Toast ---------- */
   let toastTimer = null;
   function toast(msg) {
     const t = document.createElement("div");
@@ -270,50 +76,20 @@
     t.textContent = msg;
     document.body.appendChild(t);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.remove(), 2200);
+    toastTimer = setTimeout(() => t.remove(), 2000);
   }
 
-  /* ---------------- Horloge ---------------- */
-  const elHeure = document.getElementById("heure");
-  const elDate  = document.getElementById("date-jour");
-  const jours = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
-  const mois  = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+  /* ---------- Horloge ---------- */
+  const elH = document.getElementById("heure");
+  const elD = document.getElementById("date-jour");
+  const jours = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  const mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
   function majHorloge() {
+    if (!elH) return;
     const d = new Date();
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    elHeure.textContent = hh + ":" + mm;
-    elDate.textContent = jours[d.getDay()] + " " + d.getDate() + " " + mois[d.getMonth()];
+    elH.textContent = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    if (elD) elD.textContent = jours[d.getDay()] + " " + d.getDate() + " " + mois[d.getMonth()];
   }
   majHorloge();
   setInterval(majHorloge, 15000);
-
-  /* ---------------- Ouverture inter-app (ex. depuis le Cloud) ---------------- */
-  window.addEventListener("message", (e) => {
-    if (e.data && e.data.type === "famiportail:ouvrir") {
-      const app = APPS.find((a) => a.id === e.data.app);
-      if (app) lancer(app);
-    }
-  });
-
-  /* ---------------- La fée (petite tête, coin) ---------------- */
-  const feeCoin = document.getElementById("feeCoin");
-  if (feeCoin) {
-    const bonjours = [
-      "Coucou ! Besoin d'un coup de baguette ? 🪄",
-      "Astuce : double-clic sur une icône pour ouvrir un outil.",
-      "Tout roule ? 🌿",
-      "Le savais-tu ? Une abeille visite jusqu'à 7 000 fleurs par jour. 🐝",
-      "Bon courage pour aujourd'hui 💪",
-    ];
-    let bIdx = -1;
-    feeCoin.addEventListener("click", () => {
-      bIdx = (bIdx + 1) % bonjours.length;
-      toast(bonjours[bIdx]);
-    });
-  }
-
-  // Petit mot de bienvenue au chargement
-  const prenom = (PORTAIL.user && PORTAIL.user.nom ? String(PORTAIL.user.nom).split(" ")[0] : "");
-  setTimeout(() => toast("Bienvenue" + (prenom ? " " + prenom : "") + " sur votre bureau 🌿"), 600);
 })();
