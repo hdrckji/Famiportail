@@ -4,9 +4,11 @@
    Compatible hébergement mutualisé IONOS (aucune config MySQL requise)
    ============================================================ */
 
-// ⚠️ CHANGEZ CE CODE avant la mise en ligne !
-// C'est le code que les publicateurs devront saisir pour publier.
-const CODE_PUBLICATION = 'famiflora2026';
+// Code que les publicateurs doivent saisir pour publier une annonce.
+// Défini via la variable d'environnement CODE_PUBLICATION (ex. sur Railway).
+// Repli sur une valeur par défaut si la variable n'est pas configurée.
+$codeEnv = getenv('CODE_PUBLICATION');
+define('CODE_PUBLICATION', ($codeEnv !== false && $codeEnv !== '') ? $codeEnv : 'famiflora2026');
 
 header('Content-Type: application/json; charset=utf-8');
 
