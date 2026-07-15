@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace Cloud — Mes fichiers</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  body { background: var(--fond); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  .cloud-barre {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 14px; background: var(--blanc);
+    border-bottom: 2px solid var(--vert-pale);
+  }
+  .cloud-barre .btn { padding: 0.45rem 0.9rem; font-size: 0.9rem; }
+  .fil { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 140px; font-weight: 700; color: var(--vert-fonce); overflow: hidden; }
+  .fil button { background: none; border: none; cursor: pointer; color: inherit; font: inherit; padding: 2px 4px; border-radius: 6px; white-space: nowrap; }
+  .fil button:hover { background: var(--vert-pale); }
+  .fil .sep { color: var(--encre-douce); }
+  .jauge { font-size: 0.75rem; color: var(--encre-douce); white-space: nowrap; }
+
+  .cloud-zone { flex: 1; overflow: auto; padding: 16px; position: relative; }
+  .cloud-zone.survol { outline: 3px dashed var(--vert-feuille); outline-offset: -10px; background: var(--vert-pale); }
+
+  .grille-fichiers {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 10px;
+  }
+  .fichier {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 6px; border: 1.5px solid transparent; border-radius: 12px;
+    cursor: pointer; text-align: center; background: var(--blanc);
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  .fichier:hover { border-color: var(--vert-clair); box-shadow: var(--ombre); }
+  .fichier.sel { border-color: var(--vert-feuille); background: var(--vert-pale); }
+  .fichier .ic { font-size: 2.4rem; line-height: 1; }
+  .fichier .nom { font-size: 0.78rem; font-weight: 700; word-break: break-word; line-height: 1.2; max-height: 2.4em; overflow: hidden; }
+  .fichier .taille { font-size: 0.68rem; color: var(--encre-douce); }
+
+  .vide {
+    display: grid; place-items: center; height: 100%; text-align: center;
+    color: var(--encre-douce);
+  }
+  .vide img { height: 90px; opacity: 0.8; margin-bottom: 10px; animation: flotte 3.5s ease-in-out infinite; }
+  @keyframes flotte { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+  .actions-sel {
+    position: sticky; bottom: 0; display: none; gap: 8px;
+    padding: 10px 14px; background: var(--blanc); border-top: 2px solid var(--vert-pale);
+  }
+  .actions-sel.on { display: flex; }
+  .btn-rouge { background: var(--rouge-doux); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="cloud-barre">
+  <button class="btn btn-vert" id="btnImporter">⬆️ Importer</button>
+  <button class="btn btn-clair" id="btnDossier">📁 Nouveau dossier</button>
+  <nav class="fil" id="fil" aria-label="Chemin"></nav>
+  <span class="jauge" id="jauge"></span>
+  <input type="file" id="inputFichier" multiple hidden>
+</div>
+
+<div class="cloud-zone" id="zone">
+  <div class="grille-fichiers" id="grille"></div>
+</div>
+
+<div class="actions-sel" id="actionsSel">
+  <button class="btn btn-clair" id="btnRenommer">✏️ Renommer</button>
+  <button class="btn btn-rouge" id="btnSupprimer">🗑️ Supprimer</button>
+</div>
+
+<footer class="pied" style="padding:8px; font-size:0.72rem;">
+  ☁️ Espace Cloud (démo) — vos fichiers sont stockés dans ce navigateur. Le vrai stockage serveur partagé viendra plus tard.
+</footer>
+
+<script>
+const CLE = 'famicloud_fs_v1';
+const CAP_FICHIER = 2 * 1024 * 1024;   // 2 Mo max par fichier (démo)
+
+// Arborescence : { type:'folder', name, children:[] } | { type:'file', name, data, size, mime }
+function charger() {
+  try { return JSON.parse(localStorage.getItem(CLE)) || racine(); }
+  catch (e) { return racine(); }
+}
+function racine() { return { type: 'folder', name: 'Mes fichiers', children: [] }; }
+function sauver() {
+  try { localStorage.setItem(CLE, JSON.stringify(fs)); }
+  catch (e) { alert('Espace de stockage plein (démo limitée à ce navigateur). Supprimez des fichiers.'); }
+  majJauge();
+}
+
+let fs = charger();
+let chemin = [];          // liste d'index dans children successifs
+let selection = null;     // référence de l'item sélectionné
+
+function dossierCourant() {
+  let d = fs;
+  for (const i of chemin) d = d.children[i];
+  return d;
+}
+
+function icone(item) {
+  if (item.type === 'folder') return '📁';
+  const m = (item.mime || '') + ' ' + item.name.toLowerCase();
+  if (/image|\.(png|jpe?g|gif|webp|svg)$/.test(m)) return '🖼️';
+  if (/pdf/.test(m)) return '📄';
+  if (/(word|\.docx?$)/.test(m)) return '📝';
+  if (/(sheet|excel|\.xlsx?$|\.csv$)/.test(m)) return '📊';
+  if (/(zip|rar|\.7z$|compressed)/.test(m)) return '🗜️';
+  if (/(video|\.mp4$|\.mov$)/.test(m)) return '🎬';
+  if (/(audio|\.mp3$|\.wav$)/.test(m)) return '🎵';
+  return '📄';
+}
+function humain(o) {
+  if (o < 1024) return o + ' o';
+  if (o < 1024 * 1024) return (o / 1024).toFixed(0) + ' Ko';
+  return (o / 1024 / 1024).toFixed(1) + ' Mo';
+}
+
+function rendre() {
+  selection = null;
+  document.getElementById('actionsSel').classList.remove('on');
+  const d = dossierCourant();
+  const grille = document.getElementById('grille');
+
+  // Fil d'Ariane
+  const fil = document.getElementById('fil');
+  fil.innerHTML = '';
+  const crumb = (label, prof) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.addEventListener('click', () => { chemin = chemin.slice(0, prof); rendre(); });
+    return b;
+  };
+  fil.appendChild(crumb('🏠 ' + fs.name, 0));
+  let ref = fs;
+  chemin.forEach((idx, k) => {
+    ref = ref.children[idx];
+    const s = document.createElement('span'); s.className = 'sep'; s.textContent = '›'; fil.appendChild(s);
+    fil.appendChild(crumb(ref.name, k + 1));
+  });
+
+  // Contenu (dossiers d'abord)
+  grille.innerHTML = '';
+  const items = [...d.children].map((it, idx) => ({ it, idx }))
+    .sort((a, b) => (a.it.type === b.it.type) ? a.it.name.localeCompare(b.it.name) : (a.it.type === 'folder' ? -1 : 1));
+
+  if (!items.length) {
+    grille.innerHTML =
+      '<div class="vide"><div><img src="../assets/img/fee/05_reflechit.png" alt="">' +
+      '<p>Ce dossier est vide.<br>Glissez-déposez des fichiers ici ou cliquez sur « Importer ».</p></div></div>';
+    majJauge();
+    return;
+  }
+
+  items.forEach(({ it, idx }) => {
+    const el = document.createElement('div');
+    el.className = 'fichier';
+    el.innerHTML =
+      '<div class="ic">' + icone(it) + '</div>' +
+      '<div class="nom">' + echapper(it.name) + '</div>' +
+      (it.type === 'file' ? '<div class="taille">' + humain(it.size) + '</div>' : '');
+    el.addEventListener('click', (e) => { e.stopPropagation(); selectionner(el, it); });
+    el.addEventListener('dblclick', () => ouvrir(it, idx));
+    grille.appendChild(el);
+  });
+  majJauge();
+}
+
+function selectionner(el, it) {
+  document.querySelectorAll('.fichier.sel').forEach(f => f.classList.remove('sel'));
+  el.classList.add('sel');
+  selection = it;
+  document.getElementById('actionsSel').classList.add('on');
+}
+
+function ouvrir(it, idx) {
+  if (it.type === 'folder') { chemin.push(idx); rendre(); }
+  else {
+    // Téléchargement / ouverture du fichier
+    const a = document.createElement('a');
+    a.href = it.data; a.download = it.name; a.click();
+  }
+}
+
+function echapper(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function majJauge() {
+  const taille = new Blob([JSON.stringify(fs)]).size;
+  document.getElementById('jauge').textContent = '💾 ' + humain(taille) + ' utilisés';
+}
+
+/* ---- Actions ---- */
+document.getElementById('btnDossier').addEventListener('click', () => {
+  const nom = prompt('Nom du nouveau dossier :', 'Nouveau dossier');
+  if (!nom) return;
+  dossierCourant().children.push({ type: 'folder', name: nom.trim(), children: [] });
+  sauver(); rendre();
+});
+
+document.getElementById('btnImporter').addEventListener('click', () => document.getElementById('inputFichier').click());
+document.getElementById('inputFichier').addEventListener('change', (e) => { importer(e.target.files); e.target.value = ''; });
+
+document.getElementById('btnSupprimer').addEventListener('click', () => {
+  if (!selection) return;
+  if (!confirm('Supprimer « ' + selection.name + ' » ?')) return;
+  const d = dossierCourant();
+  d.children = d.children.filter(x => x !== selection);
+  sauver(); rendre();
+});
+document.getElementById('btnRenommer').addEventListener('click', () => {
+  if (!selection) return;
+  const n = prompt('Renommer :', selection.name);
+  if (n && n.trim()) { selection.name = n.trim(); sauver(); rendre(); }
+});
+
+/* ---- Glisser-déposer ---- */
+const zone = document.getElementById('zone');
+['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add('survol'); }));
+['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, (e) => { e.preventDefault(); if (ev !== 'dragleave' || e.target === zone) zone.classList.remove('survol'); }));
+zone.addEventListener('drop', (e) => { zone.classList.remove('survol'); if (e.dataTransfer.files.length) importer(e.dataTransfer.files); });
+zone.addEventListener('click', (e) => { if (e.target === zone || e.target.id === 'grille') { document.querySelectorAll('.fichier.sel').forEach(f => f.classList.remove('sel')); selection = null; document.getElementById('actionsSel').classList.remove('on'); } });
+
+function importer(fileList) {
+  const files = [...fileList];
+  const trop = files.filter(f => f.size > CAP_FICHIER);
+  if (trop.length) alert('Ignoré (démo, max 2 Mo/fichier) : ' + trop.map(f => f.name).join(', '));
+  const ok = files.filter(f => f.size <= CAP_FICHIER);
+  let reste = ok.length;
+  if (!reste) return;
+  ok.forEach(file => {
+    const r = new FileReader();
+    r.onload = () => {
+      dossierCourant().children.push({ type: 'file', name: file.name, data: r.result, size: file.size, mime: file.type });
+      if (--reste === 0) { sauver(); rendre(); }
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+rendre();
+</script>
+</body>
+</html>

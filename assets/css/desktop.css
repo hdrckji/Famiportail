@@ -1,0 +1,298 @@
+/* ============================================================
+   famiPortail — Bureau (window manager, style OS Famiflora)
+   ============================================================ */
+
+html, body { height: 100%; }
+body.bureau {
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---------- Fond d'écran ---------- */
+#bureau {
+  position: fixed;
+  inset: 0 0 56px 0;                 /* laisse la place à la barre des tâches */
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 78% -10%, rgba(232,164,0,0.22), transparent 60%),
+    radial-gradient(900px 600px at 12% 110%, rgba(111,176,58,0.35), transparent 60%),
+    linear-gradient(150deg, #3f7a2a 0%, #2e5b1f 45%, #244a19 100%);
+}
+/* Petit motif de feuilles très discret */
+#bureau::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1.5px, transparent 1.6px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+/* La fée animée (SVG) — décor du bureau */
+.fee-deco {
+  position: absolute;
+  right: 3vw;
+  bottom: 3vh;
+  width: min(30vh, 260px);
+  height: auto;
+  filter: drop-shadow(0 12px 26px rgba(0,0,0,0.4));
+  pointer-events: none;
+  transform-origin: 50% 70%;
+  animation: feeFlotte 3s ease-in-out infinite;
+}
+@keyframes feeFlotte { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-9px) rotate(1deg); } }
+.fee-ailes { animation: feeAiles 1.5s ease-in-out infinite; transform-origin: 300px 300px; }
+@keyframes feeAiles { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(.9); } }
+.fee-bras { animation: feeCoup 2s cubic-bezier(.36,.07,.3,1) infinite; transform-origin: 340px 342px; }
+@keyframes feeCoup {
+  0%, 40% { transform: rotate(0); }
+  52%     { transform: rotate(-26deg); }
+  62%     { transform: rotate(22deg); }
+  72%     { transform: rotate(-6deg); }
+  82%,100%{ transform: rotate(0); }
+}
+.fee-halo { animation: feeHalo 2s ease-in-out infinite; transform-origin: 405px 247px; }
+@keyframes feeHalo { 0%,45%,100% { opacity:.5; transform: scale(.85); } 62% { opacity:1; transform: scale(1.35); } }
+.fee-yeux { animation: feeCligne 4.5s infinite; transform-origin: 300px 232px; }
+@keyframes feeCligne { 0%,94%,100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@media (prefers-reduced-motion: reduce) {
+  .fee-deco, .fee-ailes, .fee-bras, .fee-halo, .fee-yeux { animation: none; }
+}
+
+/* ---------- Icônes du bureau ---------- */
+.icones-bureau {
+  position: absolute;
+  top: 18px; left: 18px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(6, 96px);
+  gap: 6px 10px;
+  z-index: 1;
+}
+.icone-bureau {
+  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  color: #fff;
+  background: transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+.icone-bureau:hover { background: rgba(255,255,255,0.12); }
+.icone-bureau.sel   { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+.icone-bureau .glyphe {
+  width: 56px; height: 56px;
+  display: grid; place-items: center;
+  font-size: 2rem;
+  background: rgba(255,255,255,0.92);
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+}
+.icone-bureau.vedette .glyphe { background: linear-gradient(160deg, var(--or-pale), #fff); box-shadow: 0 4px 14px rgba(232,164,0,0.5); }
+.icone-bureau .etiquette {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+}
+.icone-bureau .badge-soon {
+  font-size: 0.62rem; font-weight: 800;
+  background: rgba(0,0,0,0.35); color: #fff;
+  padding: 1px 6px; border-radius: 999px;
+}
+
+/* ---------- Fenêtres ---------- */
+.fenetre {
+  position: absolute;
+  min-width: 300px;
+  min-height: 200px;
+  background: var(--blanc);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.fenetre.active { box-shadow: 0 22px 60px rgba(0,0,0,0.5); }
+.fenetre.max {
+  top: 0 !important; left: 0 !important;
+  width: 100% !important; height: 100% !important;
+  border-radius: 0;
+}
+.fenetre.min { display: none; }
+
+.fenetre-titre {
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px 0 12px;
+  background: linear-gradient(180deg, var(--vert-fonce), #274e1b);
+  color: #fff;
+  cursor: move;
+  touch-action: none;
+}
+.fenetre.active .fenetre-titre { background: linear-gradient(180deg, #37701f, var(--vert-fonce)); }
+.fenetre-titre .t-glyphe { font-size: 1rem; }
+.fenetre-titre .t-nom {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.98rem;
+  flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fenetre-controls { display: flex; gap: 2px; }
+.fenetre-controls button {
+  width: 34px; height: 30px;
+  border: none; background: transparent; color: #fff;
+  font-size: 0.95rem; cursor: pointer; border-radius: 7px;
+  display: grid; place-items: center;
+  transition: background 0.12s;
+}
+.fenetre-controls button:hover { background: rgba(255,255,255,0.18); }
+.fenetre-controls button.fermer:hover { background: var(--rouge-doux); }
+
+.fenetre-corps { flex: 1; position: relative; background: var(--fond); }
+.fenetre-corps iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* voile transparent au-dessus de l'iframe pendant drag/resize pour capter le pointeur */
+.fenetre-corps .voile-iframe {
+  position: absolute; inset: 0; display: none; z-index: 5;
+}
+body.en-manip .fenetre-corps .voile-iframe { display: block; }
+
+.poignee-resize {
+  position: absolute;
+  width: 18px; height: 18px;
+  right: 0; bottom: 0;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 6;
+}
+.poignee-resize::after {
+  content: ""; position: absolute; right: 3px; bottom: 3px;
+  width: 8px; height: 8px;
+  border-right: 2px solid rgba(0,0,0,0.28);
+  border-bottom: 2px solid rgba(0,0,0,0.28);
+}
+
+/* ---------- Barre des tâches ---------- */
+.barre-taches {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  background: rgba(28, 52, 18, 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  z-index: 1000;
+}
+.btn-demarrer {
+  display: flex; align-items: center; gap: 8px;
+  height: 42px; padding: 0 14px;
+  background: rgba(255,255,255,0.10);
+  border: none; border-radius: 10px;
+  color: #fff; cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 0.95rem;
+  transition: background 0.12s;
+}
+.btn-demarrer:hover, .btn-demarrer[aria-expanded="true"] { background: rgba(255,255,255,0.22); }
+.btn-demarrer img { height: 24px; }
+
+.taches-ouvertes { flex: 1; display: flex; gap: 6px; overflow-x: auto; height: 42px; align-items: center; }
+.tache {
+  display: flex; align-items: center; gap: 7px;
+  height: 42px; padding: 0 12px; max-width: 190px;
+  background: rgba(255,255,255,0.08);
+  border: none; border-bottom: 3px solid transparent;
+  border-radius: 8px;
+  color: #fff; cursor: pointer;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.85rem;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.tache:hover { background: rgba(255,255,255,0.16); }
+.tache.active { background: rgba(255,255,255,0.22); border-bottom-color: var(--vert-clair); }
+.tache .t-nom { overflow: hidden; text-overflow: ellipsis; }
+
+.horloge {
+  display: flex; flex-direction: column; align-items: flex-end;
+  background: transparent; border: none; color: #fff; cursor: default;
+  padding: 0 10px; line-height: 1.1;
+  font-family: var(--font-body);
+}
+.horloge #heure { font-weight: 800; font-size: 0.95rem; }
+.horloge #date-jour { font-size: 0.68rem; opacity: 0.85; }
+
+/* ---------- Menu Démarrer ---------- */
+.menu-demarrer {
+  position: fixed;
+  left: 8px; bottom: 62px;
+  width: 320px; max-width: calc(100vw - 16px);
+  background: var(--blanc);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  overflow: hidden;
+  z-index: 1100;
+  animation: monte 0.14s ease-out;
+}
+@keyframes monte { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.menu-entete {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px; color: #fff;
+  background: linear-gradient(135deg, var(--vert-feuille), var(--vert-fonce));
+}
+.menu-entete img { height: 40px; }
+.menu-entete strong { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; display: block; }
+.menu-entete span { font-size: 0.78rem; opacity: 0.9; }
+.menu-liste { padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; border: none; background: transparent;
+  border-radius: 10px; cursor: pointer; text-align: left;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.88rem; color: var(--encre);
+  transition: background 0.12s;
+}
+.menu-item:hover { background: var(--vert-pale); }
+.menu-item .m-glyphe { font-size: 1.25rem; }
+.menu-item[disabled] { opacity: 0.5; cursor: default; }
+.menu-item[disabled]:hover { background: transparent; }
+.menu-pied { padding: 10px 16px; font-size: 0.75rem; color: var(--encre-douce); border-top: 1px solid var(--vert-pale); }
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+  background: rgba(28,52,18,0.95); color: #fff;
+  padding: 10px 18px; border-radius: 999px;
+  font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+  z-index: 2000; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  animation: monte 0.15s ease-out;
+}
+
+/* ---------- Mobile / petits écrans ---------- */
+@media (max-width: 720px) {
+  .fee-deco { width: 34vw; right: 0; bottom: 1vh; opacity: 0.45; }
+  .icones-bureau { grid-template-rows: repeat(4, 92px); top: 12px; left: 10px; }
+  .fenetre:not(.max) {
+    top: 8px !important; left: 2vw !important;
+    width: 96vw !important; height: calc(100vh - 130px) !important;
+  }
+  .poignee-resize { display: none; }
+  .btn-demarrer span { display: none; }
+  .horloge #date-jour { display: none; }
+}
