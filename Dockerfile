@@ -4,6 +4,10 @@ FROM php:8.2-apache
 # Active la réécriture d'URL (utile pour .htaccess)
 RUN a2enmod rewrite
 
+# Force un seul MPM (prefork, celui attendu par mod_php) pour éviter
+# l'erreur "More than one MPM loaded" au démarrage d'Apache
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true; a2enmod mpm_prefork
+
 # Installe les en-têtes de dev SQLite (requis pour compiler pdo_sqlite),
 # puis les extensions PHP requises par famiCom
 RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev && \
