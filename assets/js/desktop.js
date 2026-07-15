@@ -29,8 +29,18 @@
   let zTop = 10;
   let cascade = 0;
 
+  // --- Filtrage par profil : n'affiche que les outils autorisés ---
+  const PORTAIL = window.PORTAIL || { outils: "*", user: { nom: "" } };
+  function autorise(app) {
+    if (app.bientot) return true;                 // les teasers restent visibles
+    if (PORTAIL.outils === "*") return true;
+    const permis = String(PORTAIL.outils).split(",").map((s) => s.trim()).filter(Boolean);
+    return permis.includes(app.id);
+  }
+  const APPS_VISIBLES = APPS.filter(autorise);
+
   /* ---------------- Icônes du bureau ---------------- */
-  APPS.forEach((app) => {
+  APPS_VISIBLES.forEach((app) => {
     const el = document.createElement("div");
     el.className = "icone-bureau" + (app.vedette ? " vedette" : "");
     el.setAttribute("role", "listitem");
@@ -57,13 +67,13 @@
     el.classList.add("sel");
   }
   bureau.addEventListener("mousedown", (e) => {
-    if (e.target === bureau || e.target.classList.contains("fee-deco")) {
+    if (e.target === bureau) {
       document.querySelectorAll(".icone-bureau.sel").forEach((i) => i.classList.remove("sel"));
     }
   });
 
-  /* ---------------- Menu Démarrer ---------------- */
-  APPS.forEach((app) => {
+  /* ---------------- Lanceur d'applications ---------------- */
+  APPS_VISIBLES.forEach((app) => {
     const b = document.createElement("button");
     b.className = "menu-item";
     b.setAttribute("role", "menuitem");
@@ -286,7 +296,24 @@
     }
   });
 
-  // Ouvre famiCom par défaut au premier chargement (accueil chaleureux)
-  // — commenté : on laisse le bureau vide au démarrage.
-  // lancer(APPS[0]);
+  /* ---------------- La fée (petite tête, coin) ---------------- */
+  const feeCoin = document.getElementById("feeCoin");
+  if (feeCoin) {
+    const bonjours = [
+      "Coucou ! Besoin d'un coup de baguette ? 🪄",
+      "Astuce : double-clic sur une icône pour ouvrir un outil.",
+      "Tout roule ? 🌿",
+      "Le savais-tu ? Une abeille visite jusqu'à 7 000 fleurs par jour. 🐝",
+      "Bon courage pour aujourd'hui 💪",
+    ];
+    let bIdx = -1;
+    feeCoin.addEventListener("click", () => {
+      bIdx = (bIdx + 1) % bonjours.length;
+      toast(bonjours[bIdx]);
+    });
+  }
+
+  // Petit mot de bienvenue au chargement
+  const prenom = (PORTAIL.user && PORTAIL.user.nom ? String(PORTAIL.user.nom).split(" ")[0] : "");
+  setTimeout(() => toast("Bienvenue" + (prenom ? " " + prenom : "") + " sur votre bureau 🌿"), 600);
 })();

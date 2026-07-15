@@ -13,9 +13,11 @@ define('CODE_PUBLICATION', ($codeEnv !== false && $codeEnv !== '') ? $codeEnv : 
 header('Content-Type: application/json; charset=utf-8');
 
 // --- Connexion / création de la base SQLite ---
-$dossierData = __DIR__ . '/data';
+// Base rangée dans le dossier data/ PARTAGÉ du portail (un seul volume Railway
+// pour toutes les bases : portail.sqlite, famicom.sqlite, …).
+$dossierData = dirname(__DIR__) . '/data';
 if (!is_dir($dossierData)) {
-    mkdir($dossierData, 0755, true);
+    mkdir($dossierData, 0775, true);
 }
 
 try {

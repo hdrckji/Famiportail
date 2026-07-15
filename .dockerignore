@@ -8,6 +8,10 @@ node_modules
 .idea
 *.log
 
-# Ne pas embarquer la base SQLite locale : elle est recréée au runtime
+# Ne pas embarquer les bases SQLite locales : recréées au runtime sur le volume
 famicom/data/*.sqlite
 famicom/data/*.db
+data/*.sqlite
+data/*.db
+data/*.sqlite-wal
+data/*.sqlite-shm

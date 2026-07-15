@@ -22,10 +22,20 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html
 # Copie les fichiers du projet dans le conteneur
 COPY . ${APACHE_DOCUMENT_ROOT}/
 
-# Crée le dossier de données SQLite et donne les droits à Apache (www-data)
-RUN mkdir -p ${APACHE_DOCUMENT_ROOT}/famicom/data && \
-    chown -R www-data:www-data ${APACHE_DOCUMENT_ROOT}/famicom/data && \
-    chmod -R 775 ${APACHE_DOCUMENT_ROOT}/famicom/data
+# Dossiers de données SQLite en écriture pour Apache (www-data) :
+#  - data/          : base partagée du portail (utilisateurs, etc.)
+#  - famicom/data/  : base des annonces famiCom
+# À monter sur un volume Railway pour persister au-delà des redéploiements.
+RUN mkdir -p ${APACHE_DOCUMENT_ROOT}/data ${APACHE_DOCUMENT_ROOT}/famicom/data && \
+    chown -R www-data:www-data ${APACHE_DOCUMENT_ROOT}/data ${APACHE_DOCUMENT_ROOT}/famicom/data && \
+    chmod -R 775 ${APACHE_DOCUMENT_ROOT}/data ${APACHE_DOCUMENT_ROOT}/famicom/data
+
+# Bloque l'accès web DIRECT aux bases de données (les .htaccess ne suffisent pas :
+# AllowOverride None par défaut). Personne ne peut télécharger un .sqlite.
+RUN printf '<Directory %s/data>\n  Require all denied\n</Directory>\n<Directory %s/famicom/data>\n  Require all denied\n</Directory>\n' \
+      "${APACHE_DOCUMENT_ROOT}" "${APACHE_DOCUMENT_ROOT}" \
+      > /etc/apache2/conf-available/famiportail-securite.conf && \
+    a2enconf famiportail-securite
 
 # Entrypoint : configure Apache sur le port fourni par Railway ($PORT) au démarrage
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
