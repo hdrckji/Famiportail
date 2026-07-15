@@ -67,15 +67,15 @@ function exigerConnexion(): void
 }
 
 /* ---- Ouvre la session pour un utilisateur (après vérif mot de passe) ---- */
-function connecter(array $user): void
+function connecter(array $user, string $outils = '*'): void
 {
     session_regenerate_id(true);
     $_SESSION['user_id']     = $user['id'];
-    $_SESSION['identifiant'] = $user['identifiant'];
+    $_SESSION['identifiant'] = $user['identifiant'] ?? '';
     $_SESSION['nom']         = $user['nom'] ?? '';
     $_SESSION['prenom']      = $user['prenom'] ?? '';
     $_SESSION['role']        = $user['role'] ?? 'employe';
-    $_SESSION['outils']      = $user['outils'] ?? '*';
+    $_SESSION['outils']      = $outils;
 }
 
 function deconnecter(): void

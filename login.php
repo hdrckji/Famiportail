@@ -19,15 +19,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $identifiant = trim($_POST['identifiant'] ?? '');
         $mdp = (string) ($_POST['mot_de_passe'] ?? '');
-        $stmt = portailDb()->prepare("SELECT * FROM utilisateurs WHERE identifiant = ? AND actif = 1");
-        $stmt->execute([$identifiant]);
-        $user = $stmt->fetch();
-        if ($user && password_verify($mdp, $user['mot_de_passe'])) {
-            connecter($user);
-            header('Location: ' . $suite);
-            exit;
+        try {
+            $pdo = portailDb();
+            $stmt = $pdo->prepare("SELECT * FROM utilisateurs WHERE identifiant = ?");
+            $stmt->execute([$identifiant]);
+            $user = $stmt->fetch();
+
+            $enAttente = $user && !empty($user['account_activation_pending']);
+            if ($user && !$enAttente && !empty($user['mot_de_passe']) && password_verify($mdp, $user['mot_de_passe'])) {
+                $outils = outilsPourUtilisateur($pdo, $user['id'], (string) ($user['role'] ?? ''));
+                connecter($user, $outils);
+                header('Location: ' . $suite);
+                exit;
+            }
+            $erreur = 'Identifiant ou mot de passe incorrect.';
+        } catch (Throwable $e) {
+            $erreur = "Base de données indisponible. Vérifiez que le service MySQL est bien connecté.";
         }
-        $erreur = 'Identifiant ou mot de passe incorrect.';
     }
 }
 $jeton = jetonCsrf();

@@ -1,11 +1,49 @@
 <?php
 /* ============================================================
-   famiPortail — Base de données partagée (SQLite)
-   Une seule base pour tout le bureau : utilisateurs + (à venir)
-   données des outils. Stockée dans data/ (à monter sur le volume Railway).
+   famiPortail — Connexion à la base MySQL PARTAGÉE
+   Le portail se connecte à la base de famiformation (utilisateurs
+   déjà présents). Il n'ALTÈRE PAS la table `utilisateurs` : les droits
+   d'accès aux outils sont gérés dans une table à part `portail_acces`.
    ============================================================ */
 
-const PORTAIL_DB = __DIR__ . '/data/portail.sqlite';
+/**
+ * Lit la configuration MySQL depuis l'environnement (Railway).
+ * Ordre : DATABASE_URL / MYSQL_URL (mysql://user:pass@host:port/db),
+ * puis variables individuelles Railway (MYSQLHOST…) ou génériques (DB_HOST…).
+ * @return array{0:string,1:int,2:string,3:string,4:string} [host,port,db,user,pass]
+ */
+function configMysql(): array
+{
+    $url = getenv('DATABASE_URL') ?: getenv('MYSQL_URL') ?: '';
+    if ($url !== '') {
+        $p = parse_url($url);
+        if ($p && !empty($p['host'])) {
+            return [
+                $p['host'],
+                (int) ($p['port'] ?? 3306),
+                ltrim($p['path'] ?? '', '/'),
+                urldecode($p['user'] ?? ''),
+                urldecode($p['pass'] ?? ''),
+            ];
+        }
+    }
+    $env = function (array $cles, string $defaut = '') {
+        foreach ($cles as $c) {
+            $v = getenv($c);
+            if ($v !== false && $v !== '') {
+                return $v;
+            }
+        }
+        return $defaut;
+    };
+    return [
+        $env(['MYSQLHOST', 'DB_HOST', 'MYSQL_HOST'], 'localhost'),
+        (int) $env(['MYSQLPORT', 'DB_PORT', 'MYSQL_PORT'], '3306'),
+        $env(['MYSQLDATABASE', 'DB_NAME', 'MYSQL_DATABASE'], ''),
+        $env(['MYSQLUSER', 'DB_USER', 'MYSQL_USER'], ''),
+        $env(['MYSQLPASSWORD', 'DB_PASSWORD', 'DB_PASS', 'MYSQL_PASSWORD'], ''),
+    ];
+}
 
 function portailDb(): PDO
 {
@@ -14,48 +52,44 @@ function portailDb(): PDO
         return $pdo;
     }
 
-    $dossier = dirname(PORTAIL_DB);
-    if (!is_dir($dossier)) {
-        @mkdir($dossier, 0775, true);
-    }
+    [$host, $port, $db, $user, $pass] = configMysql();
+    $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES   => false,
+    ]);
 
-    $pdo = new PDO('sqlite:' . PORTAIL_DB);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $pdo->exec('PRAGMA journal_mode = WAL;');
-
-    // Table des utilisateurs (comptes du bureau)
-    $pdo->exec("CREATE TABLE IF NOT EXISTS utilisateurs (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        identifiant  TEXT UNIQUE NOT NULL,
-        mot_de_passe TEXT NOT NULL,
-        nom          TEXT NOT NULL DEFAULT '',
-        prenom       TEXT NOT NULL DEFAULT '',
-        role         TEXT NOT NULL DEFAULT 'employe',   -- 'admin' | 'employe'
-        outils       TEXT NOT NULL DEFAULT '*',          -- '*' = tous, sinon CSV: 'famicom,cloud'
-        actif        INTEGER NOT NULL DEFAULT 1,
-        cree_le      TEXT NOT NULL
-    )");
-
-    // Compte admin initial (au premier lancement).
-    // Mot de passe via variable d'env ADMIN_MDP, repli sur 'famiflora2026'.
-    $nb = (int) $pdo->query("SELECT COUNT(*) FROM utilisateurs")->fetchColumn();
-    if ($nb === 0) {
-        $mdp = getenv('ADMIN_MDP');
-        if ($mdp === false || $mdp === '') {
-            $mdp = 'famiflora2026';
-        }
-        $stmt = $pdo->prepare("INSERT INTO utilisateurs
-            (identifiant, mot_de_passe, nom, prenom, role, outils, actif, cree_le)
-            VALUES (?, ?, ?, ?, 'admin', '*', 1, ?)");
-        $stmt->execute([
-            'admin',
-            password_hash($mdp, PASSWORD_DEFAULT),
-            'Administrateur',
-            '',
-            date('c'),
-        ]);
-    }
+    // Table PROPRE au portail : droits d'accès aux outils (n'altère pas `utilisateurs`).
+    // outils : '*' = tous, sinon CSV d'ids ('famicom,cloud'). Absence de ligne = défaut par rôle.
+    $pdo->exec("CREATE TABLE IF NOT EXISTS portail_acces (
+        user_id INT UNSIGNED PRIMARY KEY,
+        outils  VARCHAR(255) NOT NULL DEFAULT '*',
+        maj     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
     return $pdo;
+}
+
+/**
+ * Outils autorisés pour un utilisateur : sa ligne portail_acces si elle existe,
+ * sinon un défaut selon son rôle famiformation.
+ */
+function outilsPourUtilisateur(PDO $pdo, $userId, string $role): string
+{
+    try {
+        $st = $pdo->prepare("SELECT outils FROM portail_acces WHERE user_id = ?");
+        $st->execute([$userId]);
+        $row = $st->fetch();
+        if ($row && trim((string) $row['outils']) !== '') {
+            return trim((string) $row['outils']);
+        }
+    } catch (Throwable $e) {
+        // table pas encore prête : on retombe sur le défaut par rôle
+    }
+    $r = strtolower(trim($role));
+    if (in_array($r, ['admin', 'superadmin', 'teamcoach'], true)) {
+        return '*';
+    }
+    return 'famicom,famirayon,cloud';
 }

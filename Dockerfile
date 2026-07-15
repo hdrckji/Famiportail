@@ -10,10 +10,11 @@ RUN a2enmod rewrite
 RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf && \
     a2enmod mpm_prefork
 
-# Installe les en-têtes de dev SQLite (requis pour compiler pdo_sqlite),
-# puis les extensions PHP requises par famiCom
+# Extensions PHP :
+#  - pdo_mysql : base partagée du portail (utilisateurs de famiformation)
+#  - pdo_sqlite : encore utilisé par famiCom (annonces) — libsqlite3-dev requis
 RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev && \
-    docker-php-ext-install pdo pdo_sqlite && \
+    docker-php-ext-install pdo pdo_mysql pdo_sqlite && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Racine du serveur web
