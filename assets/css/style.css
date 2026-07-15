@@ -1,0 +1,120 @@
+/* ============================================================
+   famiPortail — styles partagés
+   Identité : verts Famiflora + or "magique" de la fée
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
+:root {
+  --vert-fonce:   #2E5B1F;
+  --vert-feuille: #6FB03A;
+  --vert-clair:   #A8D573;
+  --vert-pale:    #EAF4DD;
+  --fond:         #F6F9F0;
+  --encre:        #24301B;
+  --encre-douce:  #5A6B4C;
+  --or-magique:   #E8A400;
+  --or-pale:      #FDF3D7;
+  --blanc:        #FFFFFF;
+  --rouge-doux:   #C4534A;
+  --ombre:        0 4px 18px rgba(46, 91, 31, 0.10);
+  --rayon:        16px;
+  --font-display: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body:    'Nunito', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--fond);
+  color: var(--encre);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ---------- En-tête commun ---------- */
+.topbar {
+  background: var(--blanc);
+  border-bottom: 3px solid var(--vert-feuille);
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar img.logo { height: 46px; width: auto; }
+.topbar .titre-app {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.35rem;
+  color: var(--vert-fonce);
+}
+.topbar .titre-app span { color: var(--vert-feuille); }
+.topbar nav { margin-left: auto; display: flex; gap: 0.5rem; }
+.topbar nav a {
+  text-decoration: none;
+  color: var(--encre-douce);
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s;
+}
+.topbar nav a:hover,
+.topbar nav a:focus-visible { background: var(--vert-pale); color: var(--vert-fonce); }
+.topbar nav a.actif { background: var(--vert-fonce); color: var(--blanc); }
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--or-magique);
+  outline-offset: 2px;
+}
+
+.conteneur { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* ---------- Boutons ---------- */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--ombre); }
+.btn-vert { background: var(--vert-fonce); color: var(--blanc); }
+.btn-clair { background: var(--vert-pale); color: var(--vert-fonce); }
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+}
+.badge-officiel { background: var(--or-pale); color: #8A6200; border: 1.5px solid var(--or-magique); }
+.badge-categorie { background: var(--vert-pale); color: var(--vert-fonce); }
+.badge-epingle { background: var(--vert-fonce); color: var(--blanc); }
+
+/* ---------- Pied de page ---------- */
+.pied {
+  text-align: center;
+  color: var(--encre-douce);
+  font-size: 0.85rem;
+  padding: 2rem 1rem;
+  border-top: 1px solid var(--vert-pale);
+  background: var(--blanc);
+}

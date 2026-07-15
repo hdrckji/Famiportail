@@ -1,0 +1,2 @@
+# Interdit tout accès web direct à la base de données
+Require all denied

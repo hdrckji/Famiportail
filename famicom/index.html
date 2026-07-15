@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>famiCom — Communications officielles Famiflora</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  /* ---- Écran de chargement : la fée lance sa magie ---- */
+  #chargement {
+    position: fixed; inset: 0;
+    background: var(--fond);
+    display: grid; place-items: center;
+    z-index: 100;
+    transition: opacity 0.4s;
+  }
+  #chargement.fini { opacity: 0; pointer-events: none; }
+  #chargement img { height: 180px; }
+  #chargement p {
+    font-family: var(--font-display);
+    color: var(--vert-fonce);
+    font-weight: 600;
+    margin-top: 0.8rem;
+    text-align: center;
+  }
+
+  /* ---- Bandeau d'intro ---- */
+  .intro {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.8rem;
+  }
+  .intro img { height: 95px; }
+  .intro h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+  }
+  .intro .sous-titre { color: var(--encre-douce); }
+
+  /* ---- Barre d'outils (filtres + recherche + publier) ---- */
+  .barre-outils {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 1.6rem;
+  }
+  .filtre {
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 0.88rem;
+    background: var(--blanc);
+    border: 2px solid var(--vert-pale);
+    color: var(--encre-douce);
+    border-radius: 999px;
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filtre:hover { border-color: var(--vert-feuille); }
+  .filtre.actif { background: var(--vert-fonce); border-color: var(--vert-fonce); color: var(--blanc); }
+  .barre-outils input[type=search] {
+    flex: 1;
+    min-width: 180px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--vert-pale);
+    border-radius: 999px;
+    background: var(--blanc);
+  }
+
+  /* ---- Cartes annonces ---- */
+  .annonce {
+    background: var(--blanc);
+    border: 2px solid var(--vert-pale);
+    border-radius: var(--rayon);
+    padding: 1.3rem 1.5rem;
+    margin-bottom: 1rem;
+    animation: apparait 0.3s ease-out;
+  }
+  @keyframes apparait {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .annonce.epinglee { border-color: var(--or-magique); background: linear-gradient(160deg, var(--or-pale) 0%, var(--blanc) 40%); }
+  .annonce .entete {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .annonce h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    font-size: 1.2rem;
+    margin-bottom: 0.35rem;
+  }
+  .annonce .meta {
+    font-size: 0.83rem;
+    color: var(--encre-douce);
+    margin-top: 0.7rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* ---- État vide ---- */
+  #etatVide {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    display: none;
+  }
+  #etatVide img { height: 130px; margin-bottom: 0.8rem; }
+  #etatVide p { color: var(--encre-douce); font-weight: 700; }
+
+  /* ---- Formulaire de publication ---- */
+  dialog {
+    border: none;
+    border-radius: var(--rayon);
+    padding: 0;
+    max-width: 560px;
+    width: calc(100% - 2rem);
+    box-shadow: 0 20px 60px rgba(36,48,27,0.25);
+  }
+  dialog::backdrop { background: rgba(36,48,27,0.45); }
+  .form-pub { padding: 1.8rem; }
+  .form-pub h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    margin-bottom: 1.2rem;
+  }
+  .form-pub label {
+    display: block;
+    font-weight: 800;
+    font-size: 0.88rem;
+    color: var(--encre);
+    margin: 0.9rem 0 0.25rem;
+  }
+  .form-pub input, .form-pub select, .form-pub textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    padding: 0.6rem 0.9rem;
+    border: 2px solid var(--vert-pale);
+    border-radius: 10px;
+    background: var(--fond);
+  }
+  .form-pub textarea { min-height: 110px; resize: vertical; }
+  .form-pub .case { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.9rem; }
+  .form-pub .case input { width: auto; }
+  .form-pub .actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.4rem; }
+  .note-fiable {
+    background: var(--or-pale);
+    border-left: 4px solid var(--or-magique);
+    font-size: 0.85rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    color: #6d4f00;
+  }
+</style>
+</head>
+<body>
+
+<!-- Écran de chargement magique -->
+<div id="chargement" aria-hidden="true">
+  <div>
+    <img id="feeAnim" src="../assets/img/fee/frame_01_position_normale.png" alt="">
+    <p>La fée prépare vos annonces…</p>
+  </div>
+</div>
+
+<header class="topbar">
+  <img class="logo" src="../assets/img/logo.png" alt="Famiflora">
+  <div class="titre-app">fami<span>Com</span></div>
+  <nav aria-label="Navigation principale">
+    <a href="../index.html">← famiPortail</a>
+    <a href="index.html" class="actif">famiCom</a>
+  </nav>
+</header>
+
+<main class="conteneur">
+
+  <section class="intro">
+    <img src="../assets/img/fee/01_normale.png" alt="La fée Famiflora">
+    <div>
+      <h1>Les communications officielles Famiflora</h1>
+      <p class="sous-titre">Tout ce qui est publié ici est <strong>vérifié et fiable</strong>. En cas de doute sur une information entendue ailleurs : c'est famiCom qui fait foi. ✦</p>
+    </div>
+  </section>
+
+  <div class="barre-outils">
+    <button class="filtre actif" data-cat="toutes">Toutes</button>
+    <button class="filtre" data-cat="Direction">Direction</button>
+    <button class="filtre" data-cat="RH">RH</button>
+    <button class="filtre" data-cat="Magasins">Magasins</button>
+    <button class="filtre" data-cat="IT">IT</button>
+    <button class="filtre" data-cat="Événements">Événements</button>
+    <input type="search" id="rechercheAnnonces" placeholder="Rechercher une annonce…" aria-label="Rechercher une annonce">
+    <button class="btn btn-vert" id="btnOuvrirPub">+ Publier</button>
+  </div>
+
+  <section id="flux" aria-live="polite"></section>
+
+  <div id="etatVide">
+    <img src="../assets/img/fee/06_desolee.png" alt="">
+    <p>Oups… la fée n'a trouvé aucune annonce correspondante.</p>
+  </div>
+
+</main>
+
+<!-- Fenêtre de publication -->
+<dialog id="dialoguePub">
+  <form class="form-pub" id="formPub" method="dialog">
+    <h2>✦ Publier une annonce officielle</h2>
+    <label for="pubTitre">Titre</label>
+    <input id="pubTitre" required maxlength="120" placeholder="Ex. : Nouveaux horaires d'été">
+    <label for="pubCat">Catégorie</label>
+    <select id="pubCat">
+      <option>Direction</option>
+      <option>RH</option>
+      <option>Magasins</option>
+      <option>IT</option>
+      <option>Événements</option>
+    </select>
+    <label for="pubAuteur">Publié par</label>
+    <input id="pubAuteur" required placeholder="Votre nom ou service">
+    <label for="pubTexte">Message</label>
+    <textarea id="pubTexte" required placeholder="Votre annonce…"></textarea>
+    <div class="case">
+      <input type="checkbox" id="pubEpingle">
+      <label for="pubEpingle" style="margin:0">📌 Épingler en haut du flux</label>
+    </div>
+    <div id="champCode">
+      <label for="pubCode">Code de publication</label>
+      <input id="pubCode" type="password" autocomplete="off" placeholder="Code réservé aux publicateurs">
+    </div>
+    <p class="note-fiable">Rappel : famiCom est la source officielle. Ne publiez que des informations validées par votre service.</p>
+    <div class="actions">
+      <button type="button" class="btn btn-clair" id="btnAnnuler">Annuler</button>
+      <button type="submit" class="btn btn-vert">Publier l'annonce</button>
+    </div>
+  </form>
+</dialog>
+
+<footer class="pied">
+  famiCom · La source fiable des informations Famiflora
+</footer>
+
+<script>
+/* ============ Animation de chargement (coup de baguette) ============ */
+const frames = [
+  '../assets/img/fee/frame_01_position_normale.png',
+  '../assets/img/fee/frame_02_baguette_levee.png',
+  '../assets/img/fee/frame_03_coup_vers_le_bas.png',
+  '../assets/img/fee/frame_04_coup_remonte.png',
+  '../assets/img/fee/frame_05_explosion_magique.png'
+];
+frames.forEach(src => { const i = new Image(); i.src = src; });
+const feeAnim = document.getElementById('feeAnim');
+let f = 0;
+const anim = setInterval(() => {
+  f = (f + 1) % frames.length;
+  feeAnim.src = frames[f];
+}, 220);
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    clearInterval(anim);
+    document.getElementById('chargement').classList.add('fini');
+  }, 1400);
+});
+
+/* ============ Données ============ */
+const CLE = 'famicom_annonces_v1';
+
+const annoncesDemo = [
+  {
+    id: 1, titre: 'Bienvenue sur famiCom, votre nouvelle source officielle !',
+    categorie: 'Direction', auteur: 'Direction générale',
+    date: '2026-07-10', epinglee: true,
+    texte: "famiCom devient le canal unique des communications internes Famiflora. Toute information publiée ici est vérifiée et validée. Fini les rumeurs de couloir : en cas de doute, vérifiez sur famiCom !"
+  },
+  {
+    id: 2, titre: "Horaires d'été des magasins",
+    categorie: 'Magasins', auteur: 'Coordination magasins',
+    date: '2026-07-08', epinglee: false,
+    texte: "Du 15 juillet au 31 août, tous les magasins passent aux horaires d'été : ouverture de 9h à 19h en semaine, 9h à 18h30 le samedi. Les plannings détaillés arrivent dans famiPlanning."
+  },
+  {
+    id: 3, titre: 'Maintenance informatique ce vendredi soir',
+    categorie: 'IT', auteur: 'Service informatique',
+    date: '2026-07-07', epinglee: false,
+    texte: "Les caisses et l'intranet seront indisponibles vendredi de 22h à minuit pour une mise à jour de sécurité. Pensez à clôturer vos sessions avant 21h45."
+  },
+  {
+    id: 4, titre: 'Barbecue annuel du personnel — inscrivez-vous !',
+    categorie: 'Événements', auteur: 'Comité des fêtes',
+    date: '2026-07-05', epinglee: false,
+    texte: "Le barbecue annuel aura lieu le samedi 22 août. Familles bienvenues ! Inscriptions auprès de votre responsable avant le 10 août."
+  },
+  {
+    id: 5, titre: 'Nouvelle procédure de demande de congés',
+    categorie: 'RH', auteur: 'Ressources humaines',
+    date: '2026-07-02', epinglee: false,
+    texte: "À partir du 1er septembre, les demandes de congés se feront exclusivement via famiRH. Les formulaires papier ne seront plus acceptés après cette date."
+  }
+];
+
+/* Mode serveur (IONOS) : les annonces viennent de api.php, partagées par tous.
+   Mode démo (fichier ouvert en local) : repli sur localStorage. */
+const API = 'api.php';
+let modeServeur = location.protocol.startsWith('http');
+
+function chargerLocal() {
+  try {
+    const brut = localStorage.getItem(CLE);
+    if (brut) return JSON.parse(brut);
+  } catch (e) {}
+  return annoncesDemo.slice();
+}
+function sauverLocal() {
+  try { localStorage.setItem(CLE, JSON.stringify(annonces)); } catch (e) {}
+}
+
+async function chargerDepuisServeur() {
+  const rep = await fetch(API);
+  if (!rep.ok) throw new Error('API indisponible');
+  return rep.json();
+}
+
+let annonces = [];
+let categorieActive = 'toutes';
+let requete = '';
+
+/* ============ Affichage ============ */
+const flux = document.getElementById('flux');
+const etatVide = document.getElementById('etatVide');
+
+function formaterDate(iso) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-BE', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+}
+
+function echapper(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function afficher() {
+  const q = requete.toLowerCase();
+  const visibles = annonces
+    .filter(a => categorieActive === 'toutes' || a.categorie === categorieActive)
+    .filter(a => (a.titre + ' ' + a.texte + ' ' + a.auteur).toLowerCase().includes(q))
+    .sort((a, b) => (b.epinglee - a.epinglee) || b.date.localeCompare(a.date));
+
+  flux.innerHTML = visibles.map(a => `
+    <article class="annonce ${a.epinglee ? 'epinglee' : ''}">
+      <div class="entete">
+        ${a.epinglee ? '<span class="badge badge-epingle">📌 Épinglé</span>' : ''}
+        <span class="badge badge-officiel">✦ Officiel</span>
+        <span class="badge badge-categorie">${echapper(a.categorie)}</span>
+      </div>
+      <h3>${echapper(a.titre)}</h3>
+      <p>${echapper(a.texte)}</p>
+      <div class="meta">
+        <span>👤 ${echapper(a.auteur)}</span>
+        <span>🗓️ ${formaterDate(a.date)}</span>
+      </div>
+    </article>
+  `).join('');
+
+  etatVide.style.display = visibles.length ? 'none' : 'block';
+}
+
+/* ============ Filtres & recherche ============ */
+document.querySelectorAll('.filtre').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filtre').forEach(b => b.classList.remove('actif'));
+    btn.classList.add('actif');
+    categorieActive = btn.dataset.cat;
+    afficher();
+  });
+});
+document.getElementById('rechercheAnnonces').addEventListener('input', e => {
+  requete = e.target.value.trim();
+  afficher();
+});
+
+/* ============ Publication ============ */
+const dlg = document.getElementById('dialoguePub');
+document.getElementById('btnOuvrirPub').addEventListener('click', () => dlg.showModal());
+document.getElementById('btnAnnuler').addEventListener('click', () => dlg.close());
+
+document.getElementById('formPub').addEventListener('submit', async (e) => {
+  const nouvelle = {
+    titre: document.getElementById('pubTitre').value.trim(),
+    categorie: document.getElementById('pubCat').value,
+    auteur: document.getElementById('pubAuteur').value.trim(),
+    texte: document.getElementById('pubTexte').value.trim(),
+    epinglee: document.getElementById('pubEpingle').checked,
+    date: new Date().toISOString().slice(0, 10)
+  };
+
+  if (modeServeur) {
+    e.preventDefault();
+    nouvelle.code = document.getElementById('pubCode').value;
+    try {
+      const rep = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nouvelle)
+      });
+      const res = await rep.json();
+      if (!rep.ok) { alert(res.erreur || 'Publication impossible.'); return; }
+      annonces = await chargerDepuisServeur();
+      dlg.close();
+    } catch (err) {
+      alert('Le serveur ne répond pas. Réessayez plus tard.');
+      return;
+    }
+  } else {
+    nouvelle.id = Date.now();
+    annonces.push(nouvelle);
+    sauverLocal();
+  }
+  document.getElementById('formPub').reset();
+  afficher();
+});
+
+/* ---- Initialisation ---- */
+(async () => {
+  if (modeServeur) {
+    try {
+      annonces = await chargerDepuisServeur();
+    } catch (e) {
+      // Serveur sans PHP ? On repasse en mode démo local.
+      modeServeur = false;
+      annonces = chargerLocal();
+    }
+  } else {
+    annonces = chargerLocal();
+  }
+  // En mode démo, pas besoin du code de publication
+  document.getElementById('champCode').style.display = modeServeur ? '' : 'none';
+  afficher();
+})();
+</script>
+
+</body>
+</html>

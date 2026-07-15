@@ -1,0 +1,30 @@
+# Fichiers de système
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Base de données SQLite
+famicom/data/*.sqlite
+famicom/data/*.db
+
+# Fichiers temporaires
+*.log
+*.tmp
+temp/
+cache/
+
+# Dépendances (si vous utilisez composer)
+vendor/
+composer.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Fichiers de développement
+node_modules/

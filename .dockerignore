@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.local
+node_modules
+*.md
+.vscode
+.idea
+*.log
+
+# Ne pas embarquer la base SQLite locale : elle est recréée au runtime
+famicom/data/*.sqlite
+famicom/data/*.db
