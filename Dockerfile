@@ -4,8 +4,11 @@ FROM php:8.2-apache
 # Active la réécriture d'URL (utile pour .htaccess)
 RUN a2enmod rewrite
 
-# Installe les extensions PHP requises par famiCom (SQLite via PDO)
-RUN docker-php-ext-install pdo pdo_sqlite
+# Installe les en-têtes de dev SQLite (requis pour compiler pdo_sqlite),
+# puis les extensions PHP requises par famiCom
+RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev && \
+    docker-php-ext-install pdo pdo_sqlite && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Racine du serveur web
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
