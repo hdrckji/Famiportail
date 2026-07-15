@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>famiRayon — Agencez votre rayon pour vendre plus</title>
+<link rel="icon" href="../assets/img/logo.png">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>
+  .intro {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.8rem;
+  }
+  .intro img { height: 95px; }
+  .intro h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+  }
+  .intro .sous-titre { color: var(--encre-douce); max-width: 60ch; }
+
+  /* ---- Formulaire ---- */
+  .carte-form {
+    background: var(--blanc);
+    border: 2px solid var(--vert-pale);
+    border-radius: var(--rayon);
+    padding: 1.6rem;
+    margin-bottom: 2rem;
+  }
+  .carte-form label {
+    display: block;
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin: 0.9rem 0 0.3rem;
+  }
+  .carte-form label:first-of-type { margin-top: 0; }
+  .carte-form input {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 0.65rem 1rem;
+    border: 2px solid var(--vert-pale);
+    border-radius: 10px;
+    background: var(--fond);
+  }
+  .carte-form .aide { font-size: 0.82rem; color: var(--encre-douce); margin-top: 0.2rem; }
+  .carte-form .actions { margin-top: 1.3rem; }
+
+  /* ---- Fée qui réfléchit ---- */
+  #enCours {
+    display: none;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+  #enCours img { height: 160px; }
+  #enCours p {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    margin-top: 0.7rem;
+  }
+
+  /* ---- Résultats ---- */
+  #resultats { display: none; }
+  .analyse {
+    background: var(--vert-pale);
+    border-left: 5px solid var(--vert-feuille);
+    border-radius: 10px;
+    padding: 1rem 1.3rem;
+    margin-bottom: 1.4rem;
+    font-weight: 600;
+  }
+  .sugg {
+    background: var(--blanc);
+    border: 2px solid var(--vert-pale);
+    border-radius: var(--rayon);
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 0.9rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.4rem 1rem;
+    animation: apparait 0.3s ease-out;
+  }
+  @keyframes apparait {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .sugg .num {
+    grid-row: span 3;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--vert-fonce);
+    color: var(--blanc);
+    display: grid; place-items: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+  }
+  .sugg h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--vert-fonce);
+    font-size: 1.1rem;
+  }
+  .sugg p { font-size: 0.93rem; }
+  .sugg .etiquette {
+    font-weight: 800;
+    color: var(--vert-feuille);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 0.3rem;
+  }
+  .conseil {
+    background: var(--or-pale);
+    border-left: 5px solid var(--or-magique);
+    border-radius: 10px;
+    padding: 1rem 1.3rem;
+    margin-top: 1.4rem;
+  }
+  .conseil strong { color: #8A6200; }
+  #erreur {
+    display: none;
+    background: #FBE9E7;
+    border-left: 5px solid var(--rouge-doux);
+    border-radius: 10px;
+    padding: 1rem 1.3rem;
+    margin-bottom: 1.4rem;
+    color: #7d2d26;
+    font-weight: 600;
+  }
+  .refaire { margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <img class="logo" src="../assets/img/logo.png" alt="Famiflora">
+  <div class="titre-app">fami<span>Rayon</span></div>
+  <nav aria-label="Navigation principale">
+    <a href="../index.html">← famiPortail</a>
+    <a href="../famicom/index.html">famiCom</a>
+    <a href="index.html" class="actif">famiRayon</a>
+  </nav>
+</header>
+
+<main class="conteneur">
+
+  <section class="intro">
+    <img src="../assets/img/fee/05_reflechit.png" alt="La fée Famiflora réfléchit">
+    <div>
+      <h1>Quels articles placer à côté ? 🛒</h1>
+      <p class="sous-titre">Indiquez le produit principal de votre rayon : la fée vous suggère les articles complémentaires à placer à côté pour encourager les achats groupés — avec le pourquoi et le comment.</p>
+    </div>
+  </section>
+
+  <section class="carte-form" id="zoneForm">
+    <label for="champProduit">Produit ou rayon principal</label>
+    <input id="champProduit" maxlength="200" placeholder="Ex. : piscines hors-sol, barbecues, plantes d'intérieur…">
+    <label for="champContexte">Contexte (facultatif)</label>
+    <input id="champContexte" maxlength="500" placeholder="Ex. : début d'été, tête de gondole disponible, petit magasin…">
+    <p class="aide">Plus vous donnez de contexte, plus les suggestions seront adaptées.</p>
+    <div class="actions">
+      <button class="btn btn-vert" id="btnAnalyser">✦ Demander conseil à la fée</button>
+    </div>
+  </section>
+
+  <div id="erreur" role="alert"></div>
+
+  <div id="enCours" aria-live="polite">
+    <img id="feeAnim" src="../assets/img/fee/frame_01_position_normale.png" alt="">
+    <p>La fée étudie votre rayon…</p>
+  </div>
+
+  <section id="resultats" aria-live="polite">
+    <div class="analyse" id="blocAnalyse"></div>
+    <div id="listeSugg"></div>
+    <div class="conseil" id="blocConseil"></div>
+    <div class="refaire">
+      <button class="btn btn-clair" id="btnRefaire">↺ Analyser un autre rayon</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pied">
+  famiRayon · Suggestions générées par IA — à valider avec votre bon sens de terrain 🌱
+</footer>
+
+<script>
+const API = 'api.php';
+const frames = [
+  '../assets/img/fee/frame_01_position_normale.png',
+  '../assets/img/fee/frame_02_baguette_levee.png',
+  '../assets/img/fee/frame_03_coup_vers_le_bas.png',
+  '../assets/img/fee/frame_04_coup_remonte.png',
+  '../assets/img/fee/frame_05_explosion_magique.png'
+];
+frames.forEach(src => { const i = new Image(); i.src = src; });
+
+let animId = null;
+function demarrerAnim() {
+  let f = 0;
+  const img = document.getElementById('feeAnim');
+  animId = setInterval(() => { f = (f + 1) % frames.length; img.src = frames[f]; }, 220);
+}
+function arreterAnim() { clearInterval(animId); }
+
+function echapper(s) {
+  const d = document.createElement('div');
+  d.textContent = s ?? '';
+  return d.innerHTML;
+}
+
+function obtenirCode(force = false) {
+  let code = localStorage.getItem('famirayon_code');
+  if (!code || force) {
+    code = prompt("Code d'accès famiRayon (demandez-le à votre responsable) :") || '';
+    localStorage.setItem('famirayon_code', code);
+  }
+  return code;
+}
+
+async function analyser() {
+  const produit = document.getElementById('champProduit').value.trim();
+  const contexte = document.getElementById('champContexte').value.trim();
+  const erreur = document.getElementById('erreur');
+  erreur.style.display = 'none';
+
+  if (!produit) {
+    erreur.textContent = 'Indiquez d\'abord le produit ou le rayon principal.';
+    erreur.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('zoneForm').style.display = 'none';
+  document.getElementById('resultats').style.display = 'none';
+  document.getElementById('enCours').style.display = 'block';
+  demarrerAnim();
+
+  try {
+    let rep = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produit, contexte, code: obtenirCode() })
+    });
+    let res = await rep.json();
+
+    // Code d'accès incorrect ? On redemande une fois.
+    if (rep.status === 403 && res.erreur === 'code_invalide') {
+      rep = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ produit, contexte, code: obtenirCode(true) })
+      });
+      res = await rep.json();
+    }
+
+    if (!rep.ok) throw new Error(res.erreur || 'Erreur inattendue.');
+
+    afficherResultats(res);
+  } catch (e) {
+    erreur.textContent = '😕 ' + (e.message || 'Le serveur ne répond pas.');
+    erreur.style.display = 'block';
+    document.getElementById('zoneForm').style.display = 'block';
+  } finally {
+    arreterAnim();
+    document.getElementById('enCours').style.display = 'none';
+  }
+}
+
+function afficherResultats(res) {
+  document.getElementById('blocAnalyse').innerHTML = '💡 ' + echapper(res.analyse);
+  document.getElementById('listeSugg').innerHTML = (res.suggestions || []).map((s, i) => `
+    <article class="sugg">
+      <div class="num">${i + 1}</div>
+      <h3>${echapper(s.produit)}</h3>
+      <p><span class="etiquette">Pourquoi</span>${echapper(s.pourquoi)}</p>
+      <p><span class="etiquette">Placement</span>${echapper(s.placement)}</p>
+    </article>
+  `).join('');
+  document.getElementById('blocConseil').innerHTML =
+    '<strong>✦ Astuce de la fée :</strong> ' + echapper(res.conseil_general);
+  document.getElementById('resultats').style.display = 'block';
+}
+
+document.getElementById('btnAnalyser').addEventListener('click', analyser);
+document.getElementById('champProduit').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyser();
+});
+document.getElementById('btnRefaire').addEventListener('click', () => {
+  document.getElementById('resultats').style.display = 'none';
+  document.getElementById('zoneForm').style.display = 'block';
+  document.getElementById('champProduit').focus();
+});
+</script>
+
+</body>
+</html>
