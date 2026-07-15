@@ -5,8 +5,10 @@ FROM php:8.2-apache
 RUN a2enmod rewrite
 
 # Force un seul MPM (prefork, celui attendu par mod_php) pour éviter
-# l'erreur "More than one MPM loaded" au démarrage d'Apache
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true; a2enmod mpm_prefork
+# l'erreur "More than one MPM loaded" au démarrage d'Apache.
+# On supprime physiquement TOUS les liens MPM puis on n'active que prefork.
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf && \
+    a2enmod mpm_prefork
 
 # Installe les en-têtes de dev SQLite (requis pour compiler pdo_sqlite),
 # puis les extensions PHP requises par famiCom
