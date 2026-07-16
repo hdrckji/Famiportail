@@ -66,7 +66,9 @@ exigerConnexion();
   .pied{margin-top:14px;background:var(--ac);color:#fff;padding:9px 22px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;} .pied .leaf{width:18px;height:18px;}
   .edit{outline:none;border-radius:4px;} .edit:hover{background:rgba(79,176,106,.14);box-shadow:0 0 0 2px rgba(79,176,106,.3);}
   .off{display:none !important;}
-  .affiche.nature{--ac:#2e6b3a;} .affiche.minimal{--ac:#1a1a1a;} .affiche.minimal .famille,.affiche.minimal .soin .ic,.affiche.minimal .pied{background:#1a1a1a;} .affiche.minimal .famille{color:#fff;}
+  .affiche.tpl-nature{--ac:#5a8f2e;} .affiche.tpl-orange{--ac:#d97a2b;} .affiche.tpl-rose{--ac:#c25f96;} .affiche.tpl-violet{--ac:#7d5aa8;} .affiche.tpl-bleu{--ac:#3a72b5;} .affiche.tpl-turquoise{--ac:#2a9d8f;} .affiche.tpl-rouge{--ac:#c2453a;} .affiche.tpl-or{--ac:#c0922c;}
+  .affiche.tpl-minimal{--ac:#1a1a1a;} .affiche.tpl-minimal .famille,.affiche.tpl-minimal .soin .ic,.affiche.tpl-minimal .pied{background:#1a1a1a;} .affiche.tpl-minimal .famille{color:#fff;}
+  @media print{ .topbar,.panneau,.fee-back{display:none!important;} .wrap{display:block;height:auto;} .aperc{padding:0;background:#fff;display:block;overflow:visible;} .affiche{width:100%!important;box-shadow:none;border-radius:0;} .edit:hover{background:none!important;box-shadow:none!important;} }
 
   /* Fée (chargement) */
   .fee-back{position:fixed;inset:0;z-index:900;background:radial-gradient(circle at 50% 40%,#14261a,#070d09);display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;}
@@ -88,6 +90,7 @@ exigerConnexion();
   @media(max-width:820px){.wrap{grid-template-columns:1fr;height:auto;}.panneau{border-right:none;border-bottom:1px solid var(--border);}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
+<style id="printFmt">@page{size:A4 portrait;margin:10mm}</style>
 </head>
 <body>
 
@@ -95,7 +98,10 @@ exigerConnexion();
   <a class="retour" href="../index.php" target="_top" title="Retour au portail"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
   <div class="mark"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10M12 20V10M12 10C12 6.5 9 4.5 5 4.5c0 3.8 3 6 7 5.5zM12 12c0-3 3-5 7-5 0 3.8-3 6-7 5z"/></svg></div>
   <div class="t">fami<span>Botanic</span><div class="s">Affiche plante pour le client</div></div>
-  <button class="btn btn-brand push" onclick="window.print()">⬇ Obtenir l'affiche</button>
+  <select id="format" class="btn btn-ghost push" title="Format d'impression" style="padding:9px 10px;width:auto;">
+    <option value="A4">A4</option><option value="A3">A3</option><option value="A5">A5</option>
+  </select>
+  <button class="btn btn-brand" onclick="imprimer()">⬇ Obtenir l'affiche</button>
 </div>
 
 <div class="wrap">
@@ -121,11 +127,9 @@ exigerConnexion();
 
     <div class="grp">
       <h3>3 · Modèle d'affiche</h3>
-      <div class="modeles">
-        <div class="mod actif" data-m=""><div class="vig" style="background:linear-gradient(150deg,#1c6b41,#4fb06a)"></div>Classique</div>
-        <div class="mod" data-m="nature"><div class="vig" style="background:linear-gradient(150deg,#2e6b3a,#7fb539)"></div>Nature</div>
-        <div class="mod" data-m="minimal"><div class="vig" style="background:linear-gradient(150deg,#3a3a3a,#111)"></div>Minimal</div>
-      </div>
+      <div class="modeles" id="modeles"></div>
+      <div class="modeles" id="modelesPlus" style="display:none;margin-top:8px;"></div>
+      <button class="btn btn-ghost" id="btnPlus" style="width:100%;margin-top:8px;justify-content:center;font-size:12.5px;">Voir plus de modèles ▾</button>
     </div>
   </div>
 
@@ -209,10 +213,23 @@ exigerConnexion();
   document.querySelectorAll('.tog input').forEach(t=>t.addEventListener('change',()=>{
     document.querySelectorAll('[data-b="'+t.dataset.b+'"]').forEach(el=>el.classList.toggle('off',!t.checked));
   }));
+  const MODELES=[
+    {n:"Classique",m:"",c:"#1c6b41",d:"#0e3a22"},{n:"Nature",m:"tpl-nature",c:"#5a8f2e",d:"#33591a"},
+    {n:"Orange",m:"tpl-orange",c:"#d97a2b",d:"#a1531a"},{n:"Rose",m:"tpl-rose",c:"#c25f96",d:"#8c3d69"},
+    {n:"Violet",m:"tpl-violet",c:"#7d5aa8",d:"#523870"},{n:"Bleu",m:"tpl-bleu",c:"#3a72b5",d:"#254e80"},
+    {n:"Turquoise",m:"tpl-turquoise",c:"#2a9d8f",d:"#186b61"},{n:"Rouge",m:"tpl-rouge",c:"#c2453a",d:"#8a2c24"},
+    {n:"Or",m:"tpl-or",c:"#c0922c",d:"#8a6718"},{n:"Minimal",m:"tpl-minimal",c:"#3a3a3a",d:"#111"}
+  ];
+  const swatch=x=>'<div class="mod'+(x.m===""?" actif":"")+'" data-m="'+x.m+'"><div class="vig" style="background:linear-gradient(150deg,'+x.c+','+x.d+')"></div>'+x.n+'</div>';
+  document.getElementById('modeles').innerHTML=MODELES.slice(0,3).map(swatch).join('');
+  document.getElementById('modelesPlus').innerHTML=MODELES.slice(3).map(swatch).join('');
   document.querySelectorAll('.mod').forEach(m=>m.addEventListener('click',()=>{
     document.querySelectorAll('.mod').forEach(x=>x.classList.remove('actif')); m.classList.add('actif');
     document.getElementById('affiche').className='affiche'+(m.dataset.m?' '+m.dataset.m:'');
   }));
+  const plus=document.getElementById('modelesPlus'),btnPlus=document.getElementById('btnPlus');
+  btnPlus.addEventListener('click',()=>{ const ouvert=plus.style.display!=='none'; plus.style.display=ouvert?'none':'grid'; btnPlus.textContent=ouvert?'Voir plus de modèles ▾':'Voir moins ▴'; });
+  function imprimer(){ document.getElementById('printFmt').textContent='@page{size:'+document.getElementById('format').value+' portrait;margin:10mm}'; window.print(); }
 
   // Génération IA
   document.getElementById('btnGen').addEventListener('click',generer);

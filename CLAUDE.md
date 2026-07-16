@@ -77,8 +77,20 @@ Ajouter une app au bureau = **une ligne dans `APPS`** (`assets/js/desktop.js`) :
 ### 2. famiCom — backend réel
 Remplacer les données d'exemple par du **MySQL** (tables `famicom_*`) : **posts** (Actus) + **messages** (groupes + directs). Brancher l'**auth** (qui est connecté via la session portail). **Permission** : seules les personnes de l'**équipe com** peuvent publier une Actu. Garder le thème rose + la fée en chargement.
 
-### 3. famibotanic — finir (générateur d'affiches plantes, PHP)
-**Déjà construit** : `index.php` (éditeur : photo+nom → bouton « Générer avec l'IA », modèles, zones éditables, cases à cocher des infos, impression/PDF, fée en chargement) + `api.php` (envoie la photo à **Claude vision** → renvoie la fiche JSON). PHP dans le monorepo, session + MySQL partagés. **Reste à faire** : **sauvegarde/rechargement** des affiches (table `famibotanic_affiches` via `../db.php`), récupérer **prix/code** depuis Famidata si dispo, ajouter des modèles.
+### 3. famibotanic — générateur d'affiches plantes (PHP) — à enrichir
+**Déjà construit** : `index.php` (éditeur : photo+nom → « Générer avec l'IA », **modèles colorés** — 3 + « Voir plus » —, zones de texte éditables, cases à cocher des infos, **impression uniquement de l'affiche** avec **choix du format A4/A3/A5**, fée en chargement) + `api.php` (photo → **Claude vision** → fiche JSON). PHP, session + MySQL partagés.
+
+**RESTE À FAIRE (demandé par l'utilisateur, ordre libre) :**
+1. **Éditeur avancé (type Canva léger)** :
+   - **Déplacer** les blocs/tuiles, la photo — les **arranger** librement (drag & drop, positions/ordre).
+   - **Ajouter / supprimer** des blocs, et **ajouter des images**.
+   - **Mise en forme du texte** : changer la **couleur**, **gras**, **surligner**, **aligner gauche/droite/centre**.
+2. **Lisibilité du nom sur la photo** : quand le nom / nom botanique ne ressort pas bien sur l'image, fournir des **outils** (fond semi-transparent derrière le texte, contour/ombre, changement de couleur). **Et** : l'IA **détecte automatiquement** ces cas (texte peu lisible sur la photo) et **corrige** (place un fond/ajuste la couleur).
+3. **Sauvegarde des affiches** : enregistrer une affiche pour la **rouvrir plus tard**, **accessible à tout le monde** ; afficher **qui** a enregistré et **quand**. Table `famibotanic_affiches` (contenu JSON de l'affiche + `auteur` + `cree_le`), via `../db.php`.
+4. **Champs d'infos** : actuellement 4 groupes (Identité, Entretien, Commercial, Conseils). **L'utilisateur fournira une LISTE COMPLÈTE** de toutes les autres infos possibles à cocher/afficher — l'intégrer quand elle arrive.
+5. Optionnel : récupérer **prix/code** depuis Famidata si dispo.
+
+**Note bug connu résolu** : le modèle « Nature » ne changeait rien → corrigé (modèles = classes `tpl-*` qui changent la couleur d'accent). L'impression sortait plusieurs pages → corrigée (`@media print` masque tout sauf l'affiche).
 
 ### 4. Sécurité — protéger chaque outil
 Aujourd'hui seul `index.php` vérifie la session. Mettre chaque outil (et ses `api.php`) derrière `exigerConnexion()` de `auth.php`. Migrer aussi le vieux famicom/api.php (SQLite) vers MySQL.
