@@ -83,10 +83,7 @@ Remplacer les données d'exemple par du **MySQL** (tables `famicom_*`) : **posts
 **Enhancement possible** : faire consulter **famiflora.be/plantengids en direct** à chaque appel IA (outil web_search/web_fetch sur famiflora.be) pour fiabiliser les données par plante. Clarifier "Feuille 2" de la liste utilisateur (feuillage ?).
 
 **RESTE À FAIRE (demandé par l'utilisateur, ordre libre) :**
-1. **Éditeur avancé (type Canva léger)** :
-   - **Déplacer** les blocs/tuiles, la photo — les **arranger** librement (drag & drop, positions/ordre).
-   - **Ajouter / supprimer** des blocs, et **ajouter des images**.
-   - **Mise en forme du texte** : changer la **couleur**, **gras**, **surligner**, **aligner gauche/droite/centre**.
+1. **Éditeur** : ✅ FAIT — barre d'outils mise en forme (gras, surligner, couleur, alignement, via `document.execCommand` sur les zones `.edit`) ; ✅ cocher/décocher un picto l'affiche/le retire (éléments éditables). **RESTE** : **déplacer/réordonner** les blocs & la photo (drag & drop) et **ajouter des images personnalisées**.
 2. **Lisibilité du nom sur la photo** : quand le nom / nom botanique ne ressort pas bien sur l'image, fournir des **outils** (fond semi-transparent derrière le texte, contour/ombre, changement de couleur). **Et** : l'IA **détecte automatiquement** ces cas (texte peu lisible sur la photo) et **corrige** (place un fond/ajuste la couleur).
 3. ✅ **FAIT — Sauvegarde des affiches** : `api.php` actions `enregistrer`/`lister`/`obtenir`, table **`famibotanic_affiches`** (JSON complet + `auteur` + `cree_le`), accessible à tous, bouton « Enregistrer » + liste dans le panneau + **auto-sauvegarde à l'impression** (actualise la base à l'enregistrement ET à l'export).
 4. **Champs d'infos** : pictos actuels couvrent la liste FR/NL de l'utilisateur. **Il fournira une LISTE COMPLÈTE** d'autres infos à ajouter — l'intégrer quand elle arrive. (« Feuille 2 » : retirée, inutile.)

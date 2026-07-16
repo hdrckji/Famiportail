@@ -99,6 +99,21 @@ if ($action === 'obtenir') {
     exit;
 }
 
+/* ============ SUPPRIMER ============ */
+if ($action === 'supprimer') {
+    try {
+        $pdo = portailDb();
+        tableAffiches($pdo);
+        $st = $pdo->prepare("DELETE FROM famibotanic_affiches WHERE id=?");
+        $st->execute([(int) ($in['id'] ?? 0)]);
+        echo json_encode(['ok' => true]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['erreur' => $e->getMessage()]);
+    }
+    exit;
+}
+
 /* ============ ANALYSER (IA vision) ============ */
 $cle = getenv('ANTHROPIC_API_KEY');
 if ($cle === false || $cle === '') {
