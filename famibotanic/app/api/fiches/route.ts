@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, exec, FICHES } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const fiches = await query(
-      "SELECT * FROM fiches ORDER BY updated_at DESC"
+      `SELECT * FROM ${FICHES} ORDER BY updated_at DESC`
     );
     return NextResponse.json(fiches);
   } catch (e: any) {
@@ -25,10 +25,9 @@ export async function POST(req: NextRequest) {
     }
     const type = b.type === "vente" ? "vente" : "info";
     const statut = b.statut === "publiee" ? "publiee" : "brouillon";
-    const rows = await query(
-      `INSERT INTO fiches (type, titre, produit, categorie, resume, sections, statut)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
+    const res = await exec(
+      `INSERT INTO ${FICHES} (type, titre, produit, categorie, resume, sections, statut)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         type,
         b.titre.trim(),
@@ -39,6 +38,7 @@ export async function POST(req: NextRequest) {
         statut
       ]
     );
+    const rows = await query(`SELECT * FROM ${FICHES} WHERE id = ?`, [res.insertId]);
     return NextResponse.json(rows[0], { status: 201 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

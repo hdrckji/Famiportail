@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { query } from "@/lib/db";
+import { query, SETTINGS } from "@/lib/db";
 import type { Settings } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       instructions: ""
     };
     try {
-      const rows = await query<Settings>("SELECT * FROM settings WHERE id = 1");
+      const rows = await query<Settings>(`SELECT * FROM ${SETTINGS} WHERE id = 1`);
       if (rows[0]) settings = rows[0];
     } catch {
       // paramètres indisponibles : on génère quand même avec les valeurs par défaut

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { query } from "@/lib/db";
+import { query, FICHES } from "@/lib/db";
 import type { Fiche } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,18 +18,17 @@ export default async function Home({
   const params: any[] = [];
   if (type) {
     params.push(type);
-    conditions.push(`type = $${params.length}`);
+    conditions.push(`type = ?`);
   }
   if (q) {
-    params.push(`%${q}%`);
-    conditions.push(
-      `(titre ILIKE $${params.length} OR produit ILIKE $${params.length} OR categorie ILIKE $${params.length})`
-    );
+    const like = `%${q}%`;
+    params.push(like, like, like);
+    conditions.push(`(titre LIKE ? OR produit LIKE ? OR categorie LIKE ?)`);
   }
   const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const fiches = await query<Fiche>(
-    `SELECT * FROM fiches ${where} ORDER BY updated_at DESC`,
+    `SELECT * FROM ${FICHES} ${where} ORDER BY updated_at DESC`,
     params
   );
 

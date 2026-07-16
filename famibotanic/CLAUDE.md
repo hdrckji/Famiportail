@@ -13,7 +13,7 @@ Le contenu des fiches est généré par l'API Anthropic puis modifiable par l'ut
 ## Stack et structure
 
 - Next.js 14 (App Router) + TypeScript + Tailwind CSS 3
-- PostgreSQL via le paquet `pg` (pas d'ORM, requêtes SQL directes)
+- MySQL via le paquet `mysql2` (pas d'ORM, requêtes SQL directes)
 - API Anthropic via `@anthropic-ai/sdk` (route `app/api/generate/route.ts`)
 
 ```
@@ -30,28 +30,29 @@ components/
   FicheEditor.tsx           → formulaire création/édition (client)
   FicheActions.tsx          → imprimer / modifier / supprimer (client)
 lib/
-  db.ts                     → pool pg + création auto du schéma
+  db.ts                     → pool mysql2 + création auto des tables (préfixe)
   types.ts                  → types partagés (Fiche, Section, Settings)
 middleware.ts               → auth basique optionnelle via APP_PASSWORD
 ```
 
 ## RÈGLES IMPORTANTES — Base de données
 
-Cette app fait partie d'une suite d'apps internes qui **partagent une seule base PostgreSQL**. L'isolation se fait par **schéma PostgreSQL** :
+Cette app fait partie d'une suite d'apps internes qui **partagent une seule base MySQL**. MySQL n'a pas de schéma interne comme PostgreSQL : l'isolation se fait par **préfixe de table**.
 
-1. **Toutes les tables de cette app vivent dans le schéma défini par `DATABASE_SCHEMA`** (valeur en production : `famibotanic`). Ne jamais créer de table dans `public` ni dans le schéma d'une autre app.
-2. **Toute nouvelle table doit être ajoutée dans `SCHEMA_SQL` dans `lib/db.ts`**, préfixée par `${SCHEMA}.`, avec `CREATE TABLE IF NOT EXISTS`. Le schéma se crée automatiquement au premier démarrage — il n'y a pas d'outil de migration.
-3. **Toujours passer par `query()` de `lib/db.ts`** pour accéder à la base (elle garantit que le schéma existe et que le `search_path` est bon). Ne pas créer d'autre pool de connexion.
-4. **Requêtes paramétrées obligatoires** (`$1`, `$2`…) — jamais d'interpolation de valeurs utilisateur dans le SQL.
-5. Les données structurées variables (comme `sections`) sont stockées en **JSONB** ; toujours `JSON.stringify()` à l'insertion.
-6. Si une donnée doit être partagée avec d'autres apps de la suite (utilisateurs communs, catalogue…), en discuter d'abord : elle irait dans un schéma partagé (ex. `core`), pas dans `famibotanic`.
+1. **Toutes les tables de cette app sont préfixées** par `DB_PREFIX` (défaut `famibotanic_`), via les constantes `FICHES` / `SETTINGS` exportées par `lib/db.ts`. Ne jamais créer de table sans ce préfixe.
+2. **Toute nouvelle table doit être ajoutée dans `SCHEMA_SQL` dans `lib/db.ts`** (tableau d'instructions), nommée avec le préfixe, en `CREATE TABLE IF NOT EXISTS`. Les tables se créent automatiquement au premier démarrage — pas d'outil de migration.
+3. **Toujours passer par `query()` (SELECT) ou `exec()` (INSERT/UPDATE/DELETE) de `lib/db.ts`.** Ne pas créer d'autre pool de connexion.
+4. **Requêtes paramétrées obligatoires** (placeholders `?` de mysql2) — jamais d'interpolation de valeurs utilisateur dans le SQL.
+5. Les données structurées variables (comme `sections`) sont stockées en **JSON** ; toujours `JSON.stringify()` à l'insertion (mysql2 reparse en objet à la lecture).
+6. MySQL ne supporte pas `RETURNING` : après un `INSERT`/`UPDATE`, refaire un `SELECT` (par `insertId` ou par `id`) pour renvoyer la ligne.
+7. Si une donnée doit être partagée avec d'autres apps (utilisateurs communs, catalogue…), en discuter d'abord : tables communes préfixées `core_`, pas `famibotanic_`.
 
 ## Variables d'environnement
 
 | Variable | Rôle |
 |---|---|
-| `DATABASE_URL` | Connexion PostgreSQL (fournie par Railway) |
-| `DATABASE_SCHEMA` | Schéma dédié à l'app — `famibotanic` en production |
+| `DATABASE_URL` | Connexion MySQL `mysql://user:pass@host:port/base` (fournie par Railway) |
+| `DB_PREFIX` | Préfixe des tables de l'app — défaut `famibotanic_` |
 | `DATABASE_SSL` | `true` seulement pour une connexion externe à Railway |
 | `ANTHROPIC_API_KEY` | Clé API Anthropic (obligatoire pour la génération) |
 | `ANTHROPIC_MODEL` | Modèle IA (défaut `claude-sonnet-4-6`) |
@@ -84,4 +85,4 @@ npm start       # démarrage (écoute sur $PORT, requis par Railway)
 
 ## Déploiement
 
-GitHub → Railway (auto-déploiement à chaque push sur `main`). La base PostgreSQL est un service Railway lié par référence de variable. Voir README.md pour la procédure complète.
+GitHub → Railway (auto-déploiement à chaque push sur `main`). La base MySQL est un service Railway lié par référence de variable (`DATABASE_URL`). Voir README.md pour la procédure complète.

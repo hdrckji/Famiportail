@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, exec, FICHES } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export async function GET(
   const id = parseId(params.id);
   if (!id) return NextResponse.json({ error: "Id invalide." }, { status: 400 });
   try {
-    const rows = await query("SELECT * FROM fiches WHERE id = $1", [id]);
+    const rows = await query(`SELECT * FROM ${FICHES} WHERE id = ?`, [id]);
     if (!rows[0])
       return NextResponse.json({ error: "Fiche introuvable." }, { status: 404 });
     return NextResponse.json(rows[0]);
@@ -40,12 +40,11 @@ export async function PUT(
     }
     const type = b.type === "vente" ? "vente" : "info";
     const statut = b.statut === "publiee" ? "publiee" : "brouillon";
-    const rows = await query(
-      `UPDATE fiches
-       SET type=$1, titre=$2, produit=$3, categorie=$4, resume=$5,
-           sections=$6, statut=$7, updated_at=now()
-       WHERE id=$8
-       RETURNING *`,
+    await exec(
+      `UPDATE ${FICHES}
+       SET type=?, titre=?, produit=?, categorie=?, resume=?,
+           sections=?, statut=?, updated_at=CURRENT_TIMESTAMP
+       WHERE id=?`,
       [
         type,
         b.titre.trim(),
@@ -57,6 +56,7 @@ export async function PUT(
         id
       ]
     );
+    const rows = await query(`SELECT * FROM ${FICHES} WHERE id = ?`, [id]);
     if (!rows[0])
       return NextResponse.json({ error: "Fiche introuvable." }, { status: 404 });
     return NextResponse.json(rows[0]);
@@ -72,7 +72,7 @@ export async function DELETE(
   const id = parseId(params.id);
   if (!id) return NextResponse.json({ error: "Id invalide." }, { status: 400 });
   try {
-    await query("DELETE FROM fiches WHERE id = $1", [id]);
+    await exec(`DELETE FROM ${FICHES} WHERE id = ?`, [id]);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

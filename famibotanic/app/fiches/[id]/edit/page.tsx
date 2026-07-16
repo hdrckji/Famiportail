@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { query } from "@/lib/db";
+import { query, FICHES } from "@/lib/db";
 import type { Fiche } from "@/lib/types";
 import FicheEditor from "@/components/FicheEditor";
 
@@ -13,7 +13,7 @@ export default async function EditFichePage({
   const id = Number(params.id);
   if (!Number.isInteger(id)) notFound();
 
-  const rows = await query<Fiche>("SELECT * FROM fiches WHERE id = $1", [id]);
+  const rows = await query<Fiche>(`SELECT * FROM ${FICHES} WHERE id = ?`, [id]);
   const fiche = rows[0];
   if (!fiche) notFound();
 
