@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Famidata — Vos données d'entreprise</title>
+<style>
+  :root{
+    --bg:#14100f; --panel:#1e1614; --panel2:#251b18; --hover:#2c201d; --border:#392724;
+    --ink:#f1e9e7; --soft:#b39a95; --faint:#836b66;
+    --brand:#e8635b; --brand-deep:#b1362f; --ok:#4fb06a; --warn:#e0a54a; --bad:#e05a52;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;font-family:var(--font);background:
+    radial-gradient(900px 500px at 100% -5%, rgba(224,90,82,.10), transparent 60%), var(--bg);
+    color:var(--ink);-webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+
+  .topbar{display:flex;align-items:center;gap:12px;padding:13px clamp(16px,4vw,28px);border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(20,16,15,.85);backdrop-filter:blur(10px);z-index:10;}
+  .retour{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;color:var(--soft);text-decoration:none;background:var(--panel2);border:1px solid var(--border);}
+  .retour:hover{color:var(--ink);}
+  .mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(150deg,var(--brand),var(--brand-deep));display:grid;place-items:center;color:#fff;}
+  .titre{font-size:16px;font-weight:700;} .titre span{color:var(--brand);} .titre .s{font-size:12px;font-weight:500;color:var(--faint);}
+  .btn{border:none;border-radius:10px;padding:9px 15px;font-weight:700;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .btn-brand{background:linear-gradient(135deg,#f07a72,var(--brand-deep));color:#1a0908;}
+  .btn-ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--border);}
+  .push{margin-left:auto;}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:24px clamp(16px,4vw,28px) 70px;}
+
+  .src{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13px;color:var(--soft);margin-bottom:20px;}
+  .src .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);}
+  .src b{color:var(--ink);}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 18px;}
+  .kpi .ic{width:38px;height:38px;border-radius:11px;background:rgba(224,99,91,.14);color:var(--brand);display:grid;place-items:center;margin-bottom:12px;}
+  .kpi .lbl{font-size:12px;color:var(--faint);font-weight:600;}
+  .kpi .val{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .kpi .var{font-size:12px;font-weight:700;margin-top:4px;}
+  .up{color:var(--ok);} .down{color:var(--bad);}
+
+  .bloc{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+  .bloc-tete{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--border);}
+  .bloc-tete h2{margin:0;font-size:16px;font-weight:700;flex:1;}
+  .rech{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:7px 11px;color:var(--faint);}
+  .rech input{background:transparent;border:none;color:var(--ink);font:inherit;font-size:13.5px;outline:none;width:180px;}
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);padding:11px 18px;border-bottom:1px solid var(--border);}
+  tbody td{padding:12px 18px;border-bottom:1px solid var(--border);font-size:14px;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--hover);}
+  .ref{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--soft);}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .pill.ok{background:rgba(79,176,106,.15);color:var(--ok);}
+  .pill.low{background:rgba(224,165,74,.15);color:var(--warn);}
+  .pill.out{background:rgba(224,90,82,.15);color:var(--bad);}
+
+  @media(max-width:560px){ .rech input{width:110px;} .col-cat{display:none;} }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="retour" href="../index.php" target="_top" title="Retour au portail"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></a>
+  <div class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+  <div class="titre">Fami<span>data</span><div class="s">Vos données d'entreprise</div></div>
+  <button class="btn btn-ghost push">↻ Synchroniser</button>
+  <button class="btn btn-brand">⤒ Importer un fichier</button>
+</header>
+
+<div class="wrap">
+  <div class="src"><span class="dot"></span>Connecté à <b>votre base Famidata</b> · dernière synchro depuis <b>Becosoft</b> il y a 12 min</div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 7 12 3 4 7l8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+      <div class="lbl">Produits référencés</div><div class="val">4 812</div><div class="var up">▲ 37 cette semaine</div>
+    </div>
+    <div class="kpi">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+      <div class="lbl">Valeur du stock</div><div class="val">318 940 €</div><div class="var up">▲ 2,4 %</div>
+    </div>
+    <div class="kpi">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div>
+      <div class="lbl">Ventes du jour</div><div class="val">8 472 €</div><div class="var up">▲ 11 % vs hier</div>
+    </div>
+    <div class="kpi">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+      <div class="lbl">Ruptures de stock</div><div class="val">23</div><div class="var down">▲ 5 à traiter</div>
+    </div>
+  </div>
+
+  <div class="bloc">
+    <div class="bloc-tete">
+      <h2>Catalogue produits</h2>
+      <div class="rech"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" placeholder="Rechercher…" id="rech"></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="tbl">
+        <thead><tr><th>Réf.</th><th>Produit</th><th class="col-cat">Catégorie</th><th class="num">Stock</th><th class="num">Prix</th><th>Statut</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PRODUITS=[
+    {ref:"MON-DEL-17", nom:"Monstera deliciosa", cat:"Plantes d'intérieur", stock:42, prix:"24,99 €", st:"ok"},
+    {ref:"TER-CUI-30", nom:"Pot terre cuite Ø30", cat:"Poterie", stock:8, prix:"12,50 €", st:"low"},
+    {ref:"TER-UNI-5L", nom:"Terreau universel 5 L", cat:"Terreaux & engrais", stock:0, prix:"6,99 €", st:"out"},
+    {ref:"ROS-BUI-RG", nom:"Rosier buisson rouge", cat:"Extérieur", stock:64, prix:"9,90 €", st:"ok"},
+    {ref:"ARR-AUT-2L", nom:"Arrosoir 2 L", cat:"Outillage", stock:5, prix:"7,49 €", st:"low"},
+    {ref:"BAR-GAZ-PRO", nom:"Barbecue gaz 3 feux", cat:"Mobilier de jardin", stock:12, prix:"199,00 €", st:"ok"},
+    {ref:"CRO-CHT-3K", nom:"Croquettes chat 3 kg", cat:"Animalerie", stock:0, prix:"14,20 €", st:"out"},
+  ];
+  const S={ok:["ok","En stock"],low:["low","Stock bas"],out:["out","Rupture"]};
+  const tb=document.getElementById("tbody");
+  function rendre(f=""){
+    tb.innerHTML=PRODUITS.filter(p=>(p.nom+p.ref+p.cat).toLowerCase().includes(f.toLowerCase())).map(p=>`
+      <tr>
+        <td class="ref">${p.ref}</td>
+        <td>${p.nom}</td>
+        <td class="col-cat" style="color:var(--soft)">${p.cat}</td>
+        <td class="num">${p.stock}</td>
+        <td class="num">${p.prix}</td>
+        <td><span class="pill ${S[p.st][0]}">${S[p.st][1]}</span></td>
+      </tr>`).join("");
+  }
+  rendre();
+  document.getElementById("rech").addEventListener("input",e=>rendre(e.target.value));
+</script>
+</body>
+</html>
