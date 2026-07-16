@@ -78,7 +78,9 @@ Ajouter une app au bureau = **une ligne dans `APPS`** (`assets/js/desktop.js`) :
 Remplacer les données d'exemple par du **MySQL** (tables `famicom_*`) : **posts** (Actus) + **messages** (groupes + directs). Brancher l'**auth** (qui est connecté via la session portail). **Permission** : seules les personnes de l'**équipe com** peuvent publier une Actu. Garder le thème rose + la fée en chargement.
 
 ### 3. famibotanic — générateur d'affiches plantes (PHP) — à enrichir
-**Déjà construit** : `index.php` (éditeur : photo+nom → « Générer avec l'IA », **modèles colorés** — 3 + « Voir plus » —, zones de texte éditables, cases à cocher des infos, **impression uniquement de l'affiche** avec **choix du format A4/A3/A5**, fée en chargement) + `api.php` (photo → **Claude vision** → fiche JSON). PHP, session + MySQL partagés.
+**Déjà construit** : `index.php` (éditeur : photo+nom → « Générer avec l'IA », **modèles colorés** — 3 + « Voir plus » —, **bilingue FR/NL** (toggle qui change libellés + langue de l'IA), **affiche à pictogrammes** — icône + info dessous, très peu de texte, cases à cocher pour choisir quels pictos afficher, badge prix éditable, zones éditables, **impression uniquement de l'affiche** avec **format A4/A3/A5**, fée en chargement) + `api.php` (photo → **Claude vision** → JSON des attributs : emplacement, arrosage, hauteur, largeur, floraison, couleur, type, cueillette, taille + booléens mellifère/comestible/parfumé/toxique/grimpante/purificatrice/anti-limaces/fruit/gel/persistant, dans la langue demandée). Catégories inspirées de **famiflora.be/plantengids** (type, exposition, floraison, couleur, persistant…). PHP, session + MySQL partagés.
+
+**Enhancement possible** : faire consulter **famiflora.be/plantengids en direct** à chaque appel IA (outil web_search/web_fetch sur famiflora.be) pour fiabiliser les données par plante. Clarifier "Feuille 2" de la liste utilisateur (feuillage ?).
 
 **RESTE À FAIRE (demandé par l'utilisateur, ordre libre) :**
 1. **Éditeur avancé (type Canva léger)** :
