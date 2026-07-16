@@ -11,7 +11,7 @@ Contexte du projet pour Claude Code (ou tout assistant IA). **Lis ce fichier en 
 - **PHP 8.2 + Apache** dans une image **Docker** (`Dockerfile`), déployée sur **Railway**.
 - **MySQL** = base partagée (celle de **famiformation**, importée sur Railway). Connexion via `DATABASE_URL`. Extension `pdo_mysql` (+ `pdo_sqlite` encore utilisé par le vieux famicom/api.php).
 - Port dynamique Railway géré par `docker-entrypoint.sh` (adapte Apache à `$PORT`, corrige aussi le bug MPM « More than one MPM loaded »).
-- **famibotanic** est l'exception : app **Next.js** (Node), déployée comme **service Railway séparé** (Root Directory = `famibotanic`), exclue de l'image PHP via `.dockerignore`.
+- **Tout est en PHP dans le monorepo**, y compris **famibotanic** (reconstruit en PHP — plus de Next.js, plus de service séparé). Un seul service, une seule base MySQL.
 - Fins de ligne **LF** forcées sur les `.sh` (`.gitattributes`). Secrets en **variables d'env**, jamais dans git. Données (`.sqlite`) hors git, sur volume.
 
 ### Variables d'environnement Railway
@@ -38,7 +38,7 @@ famicom/index.html   → messagerie + actus (voir ci-dessous)
 famirayon/index.html → conseil mise en rayon par IA (voir ci-dessous)
 famidata/index.html  → data hub (STARTER seulement, voir À FAIRE)
 cloud/index.html     → gestionnaire de fichiers (démo localStorage)
-famibotanic/         → app Next.js séparée (voir famibotanic/CLAUDE.md)
+famibotanic/         → générateur d'affiches plantes (PHP) : index.php (éditeur) + api.php (IA vision)
 ```
 
 Ajouter une app au bureau = **une ligne dans `APPS`** (`assets/js/desktop.js`) : `{id, nom, url, glyphe, grad, [pastille], [bientot]}`. `url` peut être locale ou une adresse externe.
@@ -59,7 +59,7 @@ Ajouter une app au bureau = **une ligne dans `APPS`** (`assets/js/desktop.js`) :
 - **famiRayon** (`famirayon/index.html`) : conseil de mise en rayon par IA. **Fonctionnel** : `famirayon/api.php` relaie vers l'API Anthropic (modèle `claude-sonnet-5`, thinking désactivé). Clé via `ANTHROPIC_API_KEY`, code d'accès via `CODE_ACCES_RAYON`. Fée en chargement.
 - **famidata** (`famidata/index.html`) : **STARTER seulement** (KPIs + tableau produits en données d'exemple). Rouge. À construire (voir À FAIRE).
 - **cloud** (`cloud/index.html`) : gestionnaire de fichiers **démo** (localStorage). À remplacer par un vrai stockage serveur.
-- **famibotanic** : Next.js séparé, **en cours de redéfinition** (voir `famibotanic/CLAUDE.md`).
+- **famibotanic** (`famibotanic/index.php`) : générateur d'**affiches plantes clients** (PHP). L'employé dépose une **photo + le nom** → `api.php` appelle **Claude (vision)** → remplit l'affiche → **modèles + zones éditables + cases à cocher** des infos → impression/PDF. Réutilise `../auth.php` (session) et `../db.php` (MySQL). Fée en chargement. Accent vert. **TODO** : sauvegarde des affiches (table `famibotanic_affiches`).
 
 ---
 
@@ -77,8 +77,8 @@ Ajouter une app au bureau = **une ligne dans `APPS`** (`assets/js/desktop.js`) :
 ### 2. famiCom — backend réel
 Remplacer les données d'exemple par du **MySQL** (tables `famicom_*`) : **posts** (Actus) + **messages** (groupes + directs). Brancher l'**auth** (qui est connecté via la session portail). **Permission** : seules les personnes de l'**équipe com** peuvent publier une Actu. Garder le thème rose + la fée en chargement.
 
-### 3. famibotanic — refonte (voir famibotanic/CLAUDE.md)
-Nouveau but **client** : l'employé **dépose une photo de plante + saisit le nom** → **Claude vision** rédige la fiche → **affiche client** éditable (**modèles + zones éditables**, cases à cocher pour choisir les infos affichées) → export impression/PDF. Le code actuel est encore l'ANCIENNE version (fiches texte internes). Déjà converti PostgreSQL→MySQL. Maquette validée sur le Bureau de l'utilisateur.
+### 3. famibotanic — finir (générateur d'affiches plantes, PHP)
+**Déjà construit** : `index.php` (éditeur : photo+nom → bouton « Générer avec l'IA », modèles, zones éditables, cases à cocher des infos, impression/PDF, fée en chargement) + `api.php` (envoie la photo à **Claude vision** → renvoie la fiche JSON). PHP dans le monorepo, session + MySQL partagés. **Reste à faire** : **sauvegarde/rechargement** des affiches (table `famibotanic_affiches` via `../db.php`), récupérer **prix/code** depuis Famidata si dispo, ajouter des modèles.
 
 ### 4. Sécurité — protéger chaque outil
 Aujourd'hui seul `index.php` vérifie la session. Mettre chaque outil (et ses `api.php`) derrière `exigerConnexion()` de `auth.php`. Migrer aussi le vieux famicom/api.php (SQLite) vers MySQL.

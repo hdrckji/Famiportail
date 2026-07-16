@@ -25,9 +25,7 @@
     { id: "famirayon",   nom: "famiRayon",    url: "famirayon/index.html", glyphe: G.rayon,    grad: "linear-gradient(150deg,#e0aa46,#b67d24)", pastille: "✨" },
     { id: "cloud",       nom: "Espace Cloud", url: "cloud/index.html",     glyphe: G.cloud,    grad: "linear-gradient(150deg,#54abc2,#2f7d92)" },
     { id: "famidata",    nom: "Famidata",     url: "famidata/index.html",  glyphe: G.data,     grad: "linear-gradient(150deg,#e0655e,#b1362f)" },
-    // famibotanic = app Next.js séparée (service Railway propre). Quand elle est
-    // déployée : remplacer "bientot:true" par  url: "https://<son-url>.up.railway.app"
-    { id: "famibotanic", nom: "famiBotanic",  glyphe: G.botanic,  grad: "linear-gradient(150deg,#5cc07a,#2e8b57)", bientot: true },
+    { id: "famibotanic", nom: "famiBotanic",  url: "famibotanic/index.php", glyphe: G.botanic, grad: "linear-gradient(150deg,#5cc07a,#2e8b57)" },
     { id: "famirh",      nom: "famiRH",       glyphe: G.rh,       grad: "linear-gradient(150deg,#8a78b8,#5a4b86)", bientot: true },
     { id: "famiplanning",nom: "famiPlanning", glyphe: G.planning,grad: "linear-gradient(150deg,#d1727f,#9c4b5a)", bientot: true },
     { id: "famistock",   nom: "famiStock",    glyphe: G.stock,   grad: "linear-gradient(150deg,#5487c2,#2f5a92)", bientot: true },
