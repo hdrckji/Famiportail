@@ -88,11 +88,14 @@ Remplacer les données d'exemple par du **MySQL** (tables `famicom_*`) : **posts
    - **Ajouter / supprimer** des blocs, et **ajouter des images**.
    - **Mise en forme du texte** : changer la **couleur**, **gras**, **surligner**, **aligner gauche/droite/centre**.
 2. **Lisibilité du nom sur la photo** : quand le nom / nom botanique ne ressort pas bien sur l'image, fournir des **outils** (fond semi-transparent derrière le texte, contour/ombre, changement de couleur). **Et** : l'IA **détecte automatiquement** ces cas (texte peu lisible sur la photo) et **corrige** (place un fond/ajuste la couleur).
-3. **Sauvegarde des affiches** : enregistrer une affiche pour la **rouvrir plus tard**, **accessible à tout le monde** ; afficher **qui** a enregistré et **quand**. Table `famibotanic_affiches` (contenu JSON de l'affiche + `auteur` + `cree_le`), via `../db.php`.
-4. **Champs d'infos** : actuellement 4 groupes (Identité, Entretien, Commercial, Conseils). **L'utilisateur fournira une LISTE COMPLÈTE** de toutes les autres infos possibles à cocher/afficher — l'intégrer quand elle arrive.
+3. ✅ **FAIT — Sauvegarde des affiches** : `api.php` actions `enregistrer`/`lister`/`obtenir`, table **`famibotanic_affiches`** (JSON complet + `auteur` + `cree_le`), accessible à tous, bouton « Enregistrer » + liste dans le panneau + **auto-sauvegarde à l'impression** (actualise la base à l'enregistrement ET à l'export).
+4. **Champs d'infos** : pictos actuels couvrent la liste FR/NL de l'utilisateur. **Il fournira une LISTE COMPLÈTE** d'autres infos à ajouter — l'intégrer quand elle arrive. (« Feuille 2 » : retirée, inutile.)
 5. Optionnel : récupérer **prix/code** depuis Famidata si dispo.
 
-**Note bug connu résolu** : le modèle « Nature » ne changeait rien → corrigé (modèles = classes `tpl-*` qui changent la couleur d'accent). L'impression sortait plusieurs pages → corrigée (`@media print` masque tout sauf l'affiche).
+**Note bugs résolus** : « Nature » corrigé (classes `tpl-*`) ; impression = uniquement l'affiche (`@media print`).
+
+### 8. Paramètres — coûts des apps (FAIT, à alimenter)
+`parametres.php` (accessible via l'icône roue crantée du bureau) : tableau du **coût mensuel de chaque app** (hébergement + API/IA), total, éditable par les admins, stocké dans **`portail_couts`**. Montants saisis à la main (Railway/Anthropic ne donnent pas de total auto ici).
 
 ### 4. Sécurité — protéger chaque outil
 Aujourd'hui seul `index.php` vérifie la session. Mettre chaque outil (et ses `api.php`) derrière `exigerConnexion()` de `auth.php`. Migrer aussi le vieux famicom/api.php (SQLite) vers MySQL.

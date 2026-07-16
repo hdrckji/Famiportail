@@ -49,6 +49,9 @@ exigerConnexion();
   .modeles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .mod{border:2px solid var(--border);border-radius:10px;padding:7px 5px;text-align:center;cursor:pointer;background:var(--panel);font-size:11px;font-weight:700;color:var(--soft);}
   .mod .vig{height:40px;border-radius:6px;margin-bottom:5px;} .mod.actif{border-color:var(--brand);color:var(--ink);}
+  .saved{padding:9px 11px;border-radius:9px;background:var(--panel);border:1px solid var(--border);cursor:pointer;margin-bottom:6px;}
+  .saved:hover{border-color:var(--brand);} .saved b{display:block;font-size:13px;} .saved span{font-size:11px;color:var(--faint);}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(10,20,15,.95);color:#fff;padding:11px 20px;border-radius:999px;font-weight:600;font-size:14px;z-index:2000;box-shadow:0 10px 30px rgba(0,0,0,.4);}
 
   /* ---------- L'AFFICHE (peu de texte, pictogrammes) ---------- */
   .affiche{width:440px;background:#fff;color:#1a2a20;border-radius:8px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5);--ac:#1c6b41;}
@@ -96,6 +99,7 @@ exigerConnexion();
   <div class="mark"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10M12 20V10M12 10C12 6.5 9 4.5 5 4.5c0 3.8 3 6 7 5.5zM12 12c0-3 3-5 7-5 0 3.8-3 6-7 5z"/></svg></div>
   <div class="t">fami<span>Botanic</span><div class="s">Affiche plante — client</div></div>
   <div class="seg push" id="langSeg"><button data-l="fr" class="on">FR</button><button data-l="nl">NL</button></div>
+  <button class="btn btn-ghost" onclick="enregistrer(false)">💾 Enregistrer</button>
   <select id="format" class="btn btn-ghost" title="Format" style="padding:9px 10px;width:auto;"><option>A4</option><option>A3</option><option>A5</option></select>
   <button class="btn btn-brand" onclick="imprimer()">⬇ <span id="lblPrint">Obtenir l'affiche</span></button>
 </div>
@@ -119,6 +123,10 @@ exigerConnexion();
       <div class="modeles" id="modeles"></div>
       <div class="modeles" id="modelesPlus" style="display:none;margin-top:8px;"></div>
       <button class="btn btn-ghost" id="btnPlus" style="width:100%;margin-top:8px;justify-content:center;font-size:12.5px;">Voir plus ▾</button>
+    </div>
+    <div class="grp">
+      <h3>Affiches enregistrées</h3>
+      <div id="liste"><div style="color:var(--faint);font-size:12.5px;padding:6px;">Chargement…</div></div>
     </div>
   </div>
 
@@ -213,8 +221,6 @@ function majLangue(){
   document.getElementById('lblGen').textContent=t.gen; document.getElementById('h2').textContent=t.h2;
   document.getElementById('h3').textContent=t.h3; document.getElementById('lblPrint').textContent=t.print;
   document.getElementById('feeTxt').textContent=t.fee;
-  const ti=document.getElementById('aTitre'); if(!data.nom_commun) ti.textContent=t.titre;
-  const la=document.getElementById('aLatin'); if(!data.nom_latin) la.textContent=t.latin;
   rendreCases(); rendrePictos();
 }
 document.querySelectorAll('#langSeg button').forEach(b=>b.addEventListener('click',()=>{
@@ -260,7 +266,35 @@ document.getElementById('modelesPlus').innerHTML=MODELES.slice(3).map(swatch).jo
 document.querySelectorAll('.mod').forEach(m=>m.addEventListener('click',()=>{document.querySelectorAll('.mod').forEach(x=>x.classList.remove('actif'));m.classList.add('actif');document.getElementById('affiche').className='affiche'+(m.dataset.m?' '+m.dataset.m:'');}));
 const plus=document.getElementById('modelesPlus'),btnPlus=document.getElementById('btnPlus');
 btnPlus.addEventListener('click',()=>{const o=plus.style.display!=='none';plus.style.display=o?'none':'grid';btnPlus.textContent=o?'Voir plus ▾':'Voir moins ▴';});
-function imprimer(){document.getElementById('printFmt').textContent='@page{size:'+document.getElementById('format').value+' portrait;margin:10mm}';window.print();}
+// --- Sauvegarde / bibliothèque (base MySQL partagée) ---
+let currentId=null;
+function etatCourant(){ return { id:currentId, nom_commun:document.getElementById('aTitre').textContent.trim(), nom_latin:document.getElementById('aLatin').textContent.trim(), langue:lang, prix:document.getElementById('aPrix').textContent.trim(), modele:document.getElementById('affiche').className.replace('affiche','').trim(), data:data, actifs:actifs, photo:photoData }; }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
+async function enregistrer(silencieux){
+  try{ const rep=await fetch('api.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'enregistrer',id:currentId,etat:etatCourant()})}); const d=await rep.json(); if(!rep.ok) throw new Error(d.erreur||'Erreur'); currentId=d.id; if(!silencieux) toast('Affiche enregistrée ✓'); chargerListe(); }
+  catch(e){ if(!silencieux) alert('😕 '+(e.message||'Erreur')); }
+}
+async function chargerListe(){
+  try{ const rep=await fetch('api.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'lister'})}); const d=await rep.json(); const el=document.getElementById('liste');
+    if(!Array.isArray(d)||!d.length){ el.innerHTML='<div style="color:var(--faint);font-size:12.5px;padding:6px;">Aucune affiche enregistrée.</div>'; return; }
+    el.innerHTML=d.map(a=>'<div class="saved" data-id="'+a.id+'"><b>'+esc(a.nom_commun||'(sans nom)')+'</b><span>'+esc(a.auteur||'')+' · '+a.date+' · '+(a.langue||'fr').toUpperCase()+'</span></div>').join('');
+    el.querySelectorAll('.saved').forEach(x=>x.addEventListener('click',()=>ouvrir(+x.dataset.id)));
+  }catch(e){ document.getElementById('liste').innerHTML='<div style="color:var(--faint);font-size:12px;padding:6px;">Liste indisponible (base non connectée ?)</div>'; }
+}
+async function ouvrir(id){
+  try{ const rep=await fetch('api.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'obtenir',id})}); const et=await rep.json(); if(!rep.ok) throw new Error(et.erreur||'Erreur');
+    currentId=id; lang=et.langue||'fr'; data=et.data||{}; actifs=et.actifs||actifs;
+    document.querySelectorAll('#langSeg button').forEach(x=>x.classList.toggle('on',x.dataset.l===lang));
+    document.getElementById('affiche').className='affiche'+(et.modele?' '+et.modele:'');
+    document.querySelectorAll('.mod').forEach(x=>x.classList.toggle('actif',x.dataset.m===(et.modele||'')));
+    document.getElementById('aTitre').textContent=et.nom_commun||''; document.getElementById('aLatin').textContent=et.nom_latin||'';
+    document.getElementById('aPrix').textContent=et.prix||'0,00 €';
+    if(et.photo){ photoData=et.photo; photo.innerHTML='<img src="'+et.photo+'">'+document.getElementById('aPrix').outerHTML; drop.classList.add('plein'); drop.innerHTML='<img src="'+et.photo+'">'; }
+    else { photoData=''; photo.innerHTML='<span class="ph">Photo</span>'+document.getElementById('aPrix').outerHTML; drop.classList.remove('plein'); drop.innerHTML='<div id="dropTxt">📷 Photo de la plante</div>'; }
+    majLangue(); toast('Affiche ouverte');
+  }catch(e){ alert('😕 '+(e.message||'Erreur')); }
+}
+async function imprimer(){ await enregistrer(true); document.getElementById('printFmt').textContent='@page{size:'+document.getElementById('format').value+' portrait;margin:10mm}'; window.print(); }
 
 // --- Fée ---
 const feeBack=document.getElementById('feeBack'),feeTxt=document.getElementById('feeTxt'),feeEt=document.getElementById('feeEt');
@@ -270,7 +304,7 @@ function etincelle(){if(!feeBack.classList.contains('on'))return;const s=documen
 function feeShow(t){feeTxt.textContent=t||'…';feeBack.classList.add('on');pIdx=-1;pousse();plantes=setInterval(pousse,2200);etinc=setInterval(etincelle,650);}
 function feeHide(){feeBack.classList.remove('on');clearInterval(plantes);clearInterval(etinc);}
 
-rendreCases();
+rendreCases(); chargerListe();
 </script>
 </body>
 </html>
