@@ -4,6 +4,9 @@
 .env.local
 node_modules
 *.md
+
+# famibotanic = app Next.js séparée (runtime Node) — pas dans l'image PHP/Apache
+famibotanic
 .vscode
 .idea
 *.log
